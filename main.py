@@ -1,6 +1,8 @@
 import discord
 import os
-from dotenv import load_dotenv, dotenv_values 
+from dotenv import load_dotenv 
+
+from commands import messaging
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -17,10 +19,6 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
-        return
-
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello!')
+    await messaging(client, message)
 
 client.run(token)
