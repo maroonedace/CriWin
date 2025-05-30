@@ -1,6 +1,6 @@
-async def messaging(client, message):
-    if message.author == client.user:
-        return
+from discord import Message
 
+async def messaging(message: Message):
     if message.content.startswith('$hello'):
+        print(message.author.id)
         await message.channel.send('Hello!')
