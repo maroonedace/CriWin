@@ -3,8 +3,7 @@ from dotenv import load_dotenv
 from commands import messaging
 from discord import Client, Intents, Message
 
-import psycopg2
-
+# import psycopg2
 
 load_dotenv()
 discord_token = os.getenv('DISCORD_TOKEN')
@@ -14,18 +13,18 @@ intents = Intents.default()
 intents.message_content = True
 client = Client(intents=intents)
 
-conn = psycopg2.connect(
-    dbname="CrimsonWinterMountain",
-    user="postgres",
-    password="bv3&dF84dac",
-    host="localhost",
-    port="5433")
+# conn = psycopg2.connect(
+#     dbname="CrimsonWinterMountain",
+#     user="postgres",
+#     password="bv3&dF84dac",
+#     host="localhost",
+#     port="5433")
 
-cursor = conn.cursor()
+# cursor = conn.cursor()
 
-cursor.execute('select * from users')
+# cursor.execute('select * from users')
 
-records = cursor.fetchall()
+# records = cursor.fetchall()
 
 @client.event
 async def on_ready():
