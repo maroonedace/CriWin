@@ -1,7 +1,7 @@
 from yt_dlp import YoutubeDL
 import os
 
-max_duration_seconds: int = 10 * 60
+max_duration_seconds: int = 7 * 60
         
 def download_audio_as_mp3(youtube_url: str, output_dir: str = ".") -> str:
     """Download and convert a YouTube URL to MP3."""
