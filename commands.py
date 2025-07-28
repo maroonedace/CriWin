@@ -13,6 +13,13 @@ def download_audio_as_mp3(youtube_url: str, output_dir: str = ".") -> str:
     with YoutubeDL(meta_opts) as meta_dl:
         info = meta_dl.extract_info(youtube_url, download=False)
         duration = info.get('duration') or 0
+        is_live = info.get('is_live', False) or info.get('live_status') == 'is_live'
+    
+    if is_live:
+        raise ValueError(
+            f"Live streams aren’t supported. Please provide a regular uploaded video URL."
+        )
+
         
     if duration > max_duration_seconds:
         minutes = duration // 60
