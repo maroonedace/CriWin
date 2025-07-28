@@ -49,7 +49,7 @@ async def ytmp3(interaction: Interaction, url: str):
         
     if not is_valid_youtube_url(url):
         return await interaction.response.send_message(
-            "❌ That doesn’t look like a valid YouTube URL.", 
+            "❌ That doesn't look like a valid YouTube URL.", 
             ephemeral=True, 
             delete_after=10
         )
@@ -63,7 +63,7 @@ async def ytmp3(interaction: Interaction, url: str):
         )
         await interaction.followup.send(file=discord.File(mp3_path), ephemeral=True)
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
+        await interaction.followup.send(f"{e}", ephemeral=True)
     finally:
         active_downloads.remove(interaction.user.id)
 
