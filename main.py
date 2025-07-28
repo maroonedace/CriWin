@@ -44,7 +44,7 @@ async def ytmp3(interaction: Interaction, url: str):
             ephemeral=True, 
             delete_after=10
         )
-    await interaction.response.defer(ephemeral=True)
+    await interaction.response.defer()
     try:
         mp3_path = download_audio_as_mp3(url, output_dir="downloads")
         file_msg = await interaction.followup.send(file=discord.File(mp3_path))
