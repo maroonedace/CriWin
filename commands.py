@@ -17,9 +17,8 @@ def download_audio_as_mp3(youtube_url: str, output_dir: str = ".") -> str:
     
     if is_live:
         raise ValueError(
-            f"Live streams aren’t supported. Please provide a regular uploaded video URL."
+            f"Live streams aren't supported. Please provide a regular uploaded video URL."
         )
-
         
     if duration > max_duration_seconds:
         minutes = duration // 60
