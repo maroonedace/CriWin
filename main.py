@@ -1,3 +1,4 @@
+import asyncio
 import os
 import discord
 from dotenv import load_dotenv
@@ -25,6 +26,8 @@ class MyClient(Client):
 intents = Intents.default()
 intents.message_content = True
 
+active_downloads: set[int] = set()
+
 client = MyClient(intents=intents)
 
 @client.event
@@ -38,18 +41,30 @@ async def on_ready():
 
 @app_commands.describe(url="The YouTube video URL to convert to MP3.")
 async def ytmp3(interaction: Interaction, url: str):
+    user_id = interaction.user.id
+    if user_id in active_downloads:
+        return await interaction.response.send_message(
+            "⚠️ You already have a download in progress.", ephemeral=True
+        )
+        
     if not is_valid_youtube_url(url):
         return await interaction.response.send_message(
             "❌ That doesn’t look like a valid YouTube URL.", 
             ephemeral=True, 
             delete_after=10
         )
-    await interaction.response.defer()
+
+    active_downloads.add(user_id)
+    await interaction.response.defer(ephemeral=True)
+    
     try:
-        mp3_path = download_audio_as_mp3(url, output_dir="downloads")
-        file_msg = await interaction.followup.send(file=discord.File(mp3_path))
-        await file_msg.delete(delay= 5 * 60)  # Delete after 5 minutes
+        mp3_path = await asyncio.to_thread(
+            download_audio_as_mp3, url, "downloads"
+        )
+        await interaction.followup.send(file=discord.File(mp3_path), ephemeral=True)
     except Exception as e:
-        await interaction.followup.send(f"❌ Error: {e}")
+        await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
+    finally:
+        active_downloads.remove(interaction.user.id)
 
 client.run(discord_token)
