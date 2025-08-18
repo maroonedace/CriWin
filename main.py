@@ -3,7 +3,8 @@ import discord
 from dotenv import load_dotenv
 from discord import Intents, app_commands, Object
 
-from commands.ytmp3.main import setup_ytmp3
+from commands.resize_image.main import resize_image
+from commands.yt_to_mp3.main import setup_ytmp3
 
 load_dotenv()
 discord_token = os.getenv('DISCORD_TOKEN')
@@ -17,6 +18,7 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 setup_ytmp3(tree)
+resize_image(tree)
 
 @client.event
 async def setup_hook():
