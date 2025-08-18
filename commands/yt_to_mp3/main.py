@@ -1,6 +1,7 @@
 import re
 import os
 import asyncio
+from urllib.parse import urlparse, parse_qs
 from yt_dlp import YoutubeDL
 from discord import app_commands, File, Interaction
 
@@ -8,15 +9,24 @@ active_downloads: set[int] = set()
 max_duration_seconds: int = 7 * 60
 
 YOUTUBE_REGEX = re.compile(
-    r'^(https?://)?'
-    r'((www\.)?youtu\.be/|((m|www)\.)?youtube\.com/)'
-    r'((watch\?v=)|embed/|v/)?'
-    r'(?P<id>[\w-]{11})'
-    r'([&?].*)?$'
+    r'^(https?://)?'                                 # optional scheme
+    r'((www\.)?youtu\.be/|((m|www)\.)?youtube\.com/)'# domains
+    r'((watch\?v=)|embed/|v/|shorts/)?'              # accepted path prefixes
+    r'(?P<id>[\w-]{11})'                             # video ID
+    r'([&?].*)?$'                                    # optional params
 )
 
 def is_valid_youtube_url(url: str) -> bool:
     return bool(YOUTUBE_REGEX.match(url))
+
+def is_playlist_url(url: str) -> bool:
+    try:
+        p = urlparse(url)
+        qs = parse_qs(p.query)
+        # reject if a list= param exists or explicit playlist path
+        return "list" in qs or p.path.strip("/").startswith("playlist")
+    except Exception:
+        return False
 
 def download_audio_as_mp3(youtube_url: str,
                           output_dir: str = ".") -> str:
@@ -81,6 +91,12 @@ def setup_ytmp3(tree: app_commands.CommandTree):
                 "❌ That doesn't look like a valid YouTube URL.",
                 ephemeral=True,
                 delete_after=10
+            )
+        
+        if is_playlist_url(url):
+            return await interaction.response.send_message(
+                "🚫 Playlist links aren't supported. Please paste a single video URL.",
+                ephemeral=True, delete_after=10
             )
 
         # 3) mark & defer
