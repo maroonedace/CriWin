@@ -1,12 +1,8 @@
-import logging
 import os
 import discord
 from dotenv import load_dotenv
 from discord import Intents, app_commands, Object
-
-from commands.play_sound.main import play_sound
-from commands.resize_image.main import resize_image
-from commands.yt_to_mp3.main import setup_ytmp3
+from commands import setup_all
 
 load_dotenv()
 discord_token = os.getenv('DISCORD_TOKEN')
@@ -20,9 +16,7 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-setup_ytmp3(tree)
-resize_image(tree)
-play_sound(tree)
+setup_all(tree)
 
 @client.event
 async def setup_hook():

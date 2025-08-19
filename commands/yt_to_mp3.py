@@ -75,7 +75,7 @@ def setup_ytmp3(tree: app_commands.CommandTree):
         description="Download a YouTube video as MP3 (≤ 7 min)."
     )
     @app_commands.describe(url="The YouTube URL to convert.")
-    async def ytmp3(interaction: Interaction, url: str):
+    async def yt_to_mp3(interaction: Interaction, url: str):
         user_id = interaction.user.id
 
         # 1) rate‑limit per user

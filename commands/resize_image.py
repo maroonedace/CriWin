@@ -47,7 +47,7 @@ def _resize_image_bytes(
         return buf.read()
 
 # ---------- slash command ----------
-def resize_image(tree: app_commands.CommandTree):
+def setup_resize_image(tree: app_commands.CommandTree):
     @tree.command(
     name="resize_image",
         description="Resize an image to given width/height."
