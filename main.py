@@ -16,7 +16,7 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-setup_all(tree)
+setup_all(tree, client)
 
 @client.event
 async def setup_hook():
