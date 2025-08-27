@@ -20,17 +20,11 @@ def setup_play_sound(tree: app_commands.CommandTree):
     
     async def setup_play_sound(interaction: Interaction, sound_name: str):
         vc = interaction.guild.voice_client
-        if vc and vc.is_connected():
-            return await interaction.response.send_message(
-                "⚠️ I'm already in a voice channel. Use `/leave` first.",
-                ephemeral=True,
-                delete_after=8,
-            )
         user = interaction.user
 
         if not user.voice or not user.voice.channel:
             return await interaction.response.send_message(
-                "❌ You must be in a voice channel.", ephemeral=True
+                "❌ You must be in a voice channel.", ephemeral=True, delete_after=10
             )
         
         await interaction.response.defer(ephemeral=True)
@@ -51,6 +45,8 @@ def setup_play_sound(tree: app_commands.CommandTree):
         
         try:
             vc.play(source, after=after_playing)
+            await interaction.followup.send(f"✅ Now playing: {sound_name}", ephemeral=True)
+        
         except Exception as e:
             try:
                 await vc.disconnect()

@@ -6,8 +6,6 @@ import discord
 from discord import app_commands, Interaction, File
 from PIL import Image, ImageOps
 
-# ---------- image helpers ----------
-
 def _resize_image_bytes(
     image_bytes: bytes,
     width: int,
@@ -46,7 +44,6 @@ def _resize_image_bytes(
         buf.seek(0)
         return buf.read()
 
-# ---------- slash command ----------
 def setup_resize_image(tree: app_commands.CommandTree):
     @tree.command(
     name="resize_image",

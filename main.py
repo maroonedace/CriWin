@@ -6,7 +6,8 @@ from commands import setup_all
 
 load_dotenv()
 discord_token = os.getenv('DISCORD_TOKEN')
-guild_id = os.getenv('GUILD_ID')
+
+guild_id = int(os.getenv('GUILD_ID'))
 GUILD = Object(id=guild_id)
 
 intents = Intents.default()
@@ -16,10 +17,12 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-setup_all(tree)
-
 @client.event
 async def setup_hook():
+    tree.clear_commands(guild=GUILD)
+
+    setup_all(tree)
+    
     tree.copy_global_to(guild=GUILD)
     await tree.sync(guild=GUILD)
 
