@@ -1,0 +1,10 @@
+{
+    "jeff": {
+        "name": "Jeff Theme Song",
+        "file_path": "./sounds/jeff.mp3"
+    },
+    "shooting_stars": {
+        "name": "Shooting Stars",
+        "file_path": "./sounds/shooting_stars.mp3"
+    }
+}

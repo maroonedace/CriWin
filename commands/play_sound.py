@@ -1,7 +1,15 @@
 import asyncio
 from discord import Interaction, app_commands, FFmpegPCMAudio
 
-from sounds import sounds
+import json
+
+with open("./sounds/sounds.json", "r") as file:
+    data = json.load(file)
+
+soundFiles = []
+
+for sound in data.values():
+    soundFiles.append(app_commands.Choice(name=sound["name"], value=sound["file_path"]))
 
 
 def setup_play_sound(tree: app_commands.CommandTree):
@@ -12,10 +20,7 @@ def setup_play_sound(tree: app_commands.CommandTree):
     )
     
     @app_commands.choices(
-        sound_name=[
-            app_commands.Choice(name="Jeff Theme Song", value="jeff"),
-            app_commands.Choice(name="Shooting Stars", value="shooting_stars"),
-        ]
+        sound_name=soundFiles
     )
     
     async def setup_play_sound(interaction: Interaction, sound_name: str):
@@ -35,7 +40,7 @@ def setup_play_sound(tree: app_commands.CommandTree):
         except Exception as e:
             return await interaction.followup.send(f"❌ Failed to join VC: {e}", ephemeral=True)
         
-        source = FFmpegPCMAudio(sounds[sound_name])
+        source = FFmpegPCMAudio(sound_name)
         
         def after_playing(error: Exception | None):
             if error:
