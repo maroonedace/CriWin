@@ -12,24 +12,24 @@ for sound in data.values():
     soundFiles.append(app_commands.Choice(name=sound["name"], value=sound["file_path"]))
 
 
-def setup_play_sound(tree: app_commands.CommandTree):
-    @tree.command(name="play_sound", description="Play a sound")
+def setup_soundboard(tree: app_commands.CommandTree):
+    @tree.command(name="soundboard", description="Play a sound in your voice channel.")
     
     @app_commands.describe(
-        sound_name="Sound to play",
+        sound_name="Select a sound to play",
     )
     
     @app_commands.choices(
         sound_name=soundFiles
     )
     
-    async def setup_play_sound(interaction: Interaction, sound_name: str):
+    async def soundboard(interaction: Interaction, sound_name: str):
         vc = interaction.guild.voice_client
         user = interaction.user
 
         if not user.voice or not user.voice.channel:
             return await interaction.response.send_message(
-                "❌ You must be in a voice channel.", ephemeral=True, delete_after=10
+                "❌ You must be in a voice channel.", ephemeral=True
             )
         
         await interaction.response.defer(ephemeral=True)
@@ -45,7 +45,6 @@ def setup_play_sound(tree: app_commands.CommandTree):
         def after_playing(error: Exception | None):
             if error:
                 print(f"Playback error: {error}")
-            # schedule disconnect back on the event loop
             interaction.client.loop.call_soon_threadsafe(asyncio.create_task, vc.disconnect())
         
         try:
