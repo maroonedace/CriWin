@@ -5,7 +5,6 @@ from urllib.parse import urlparse, parse_qs
 from yt_dlp import YoutubeDL
 
 MAX_CLIP_SECONDS = 5 * 60
-DEFAULT_CLIP_SECONDS = 30
 AUDIO_CODEC, AUDIO_QUALITY = "mp3", "192"
 
 SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9 _.-]+")
@@ -19,30 +18,21 @@ YTDL_BASE = {
     "quiet": True, "noplaylist": True,
 }
 
+def parse_t(raw: str) -> Optional[int]:
+    if not raw: return None
+    sec = raw.replace("s", "")
+    return int(sec)
+
 def parse_share_link(url: str) -> Tuple[str, int]:
     if not (YTD_BE_RE.match(url) or SHORTS_RE.match(url)):
         raise ValueError("Only share links are accepted (youtu.be/... or youtube.com/shorts/...).")
     p = urlparse(url); qs = parse_qs(p.query)
     if "list" in qs: raise ValueError("Playlist links are not supported.")
-    start = 0
-    if qs.get("t"): start = max(0, _parse_t(qs["t"][0]) or 0)
-    vid = p.path.strip("/").split("/")[-1]
-    if not re.fullmatch(r"[\w-]{11}", vid): raise ValueError("Invalid video id.")
-    return vid, start
-
-def _parse_t(raw: str) -> Optional[int]:
-    s = (raw or "").strip().lower()
-    if not s: return None
-    if s.isdigit(): return int(s)
-    h=m=sec=0; num=""
-    for ch in s:
-        if ch.isdigit(): num += ch
-        elif ch=="h" and num: h,num=int(num), ""
-        elif ch=="m" and num: m,num=int(num), ""
-        elif ch=="s" and num: sec,num=int(num), ""
-        else: return None
-    if num: sec=int(num)
-    return h*3600 + m*60 + sec
+    startTime = 0
+    if qs.get("t"): startTime = max(0, parse_t(qs["t"][0]) or 0)
+    videoId = p.path.strip("/").split("/")[-1]
+    if not re.fullmatch(r"[\w-]{11}", videoId): raise ValueError("Invalid video id.")
+    return videoId, startTime
 
 def parse_ts(v: Optional[Union[str,int]]) -> Optional[int]:
     if v is None: return None
@@ -77,26 +67,25 @@ def uniquify(path: Path) -> Path:
 def fetch_info(url: str) -> dict:
     with YoutubeDL(YTDL_META) as ydl: return ydl.extract_info(url, download=False)
 
-def download_clip_mp3(canonical: str, outdir: Path, start: int, length_opt: Optional[int], desired: Optional[str]) -> Path:
+def download_clip_mp3(canonical: str, outdir: Path, start: int, length_opt: Optional[int], filename_opt: Optional[str]) -> Path:
     info = fetch_info(canonical)
     if info.get("is_live") or info.get("live_status") == "is_live":
-        raise ValueError("Live streams aren’t supported.")
+        raise ValueError("Live streams aren't supported.")
     duration = int(info.get("duration") or 0)
 
     start = max(0, int(start))
-    length = length_opt if length_opt is not None else DEFAULT_CLIP_SECONDS
-    length = max(1, min(int(length), MAX_CLIP_SECONDS))
+    clip_length = max(1, min(int(length_opt), MAX_CLIP_SECONDS))
     if duration:
         if start >= duration: raise ValueError("Start time is beyond the end of the video.")
-        if start + length > duration: length = duration - start
+        if start + clip_length > duration: clip_length = duration - start
 
     outdir.mkdir(parents=True, exist_ok=True)
-    base = desired or (info.get("title") or "clip")
-    target = uniquify(outdir / safe_filename(base, ".mp3"))
+    filename = filename_opt or (info.get("title") or "clip")
+    target = uniquify(outdir / safe_filename(filename, ".mp3"))
 
     ydl_opts = dict(YTDL_BASE)
     ydl_opts["outtmpl"] = str(target.with_suffix(".%(ext)s"))
-    ydl_opts["postprocessor_args"] = ["-ss", str(start), "-t", str(length)]
+    ydl_opts["postprocessor_args"] = ["-ss", str(start), "-t", str(clip_length)]
     with YoutubeDL(ydl_opts) as ydl:
         ydl.extract_info(canonical, download=True)
     return target
