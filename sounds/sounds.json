@@ -1,10 +1,14 @@
 {
-    "jeff": {
-        "name": "Jeff Theme Song",
-        "file_path": "./sounds/jeff.mp3"
+  "sounds": [
+    {
+      "id": 1,
+      "display_name": "Jeff Theme Song",
+      "file_name": "jeff.mp3"
     },
-    "shooting_stars": {
-        "name": "Shooting Stars",
-        "file_path": "./sounds/shooting_stars.mp3"
+    {
+      "id": 2,
+      "display_name": "Shooting Stars",
+      "file_name": "shooting_stars.mp3"
     }
+  ]
 }

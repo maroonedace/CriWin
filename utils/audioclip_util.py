@@ -73,11 +73,11 @@ def download_clip_mp3(canonical: str, outdir: Path, start: int, length_opt: Opti
         raise ValueError("Live streams aren't supported.")
     duration = int(info.get("duration") or 0)
 
-    start = max(0, int(start))
-    clip_length = max(1, min(int(length_opt), MAX_CLIP_SECONDS))
+    startTime = max(0, int(start))
+    clip_length = max(1, min(int(length_opt), MAX_CLIP_SECONDS)) if length_opt is not None else MAX_CLIP_SECONDS
     if duration:
-        if start >= duration: raise ValueError("Start time is beyond the end of the video.")
-        if start + clip_length > duration: clip_length = duration - start
+        if startTime >= duration: raise ValueError("Start time is beyond the end of the video.")
+        if startTime + clip_length > duration: clip_length = duration - startTime
 
     outdir.mkdir(parents=True, exist_ok=True)
     filename = filename_opt or (info.get("title") or "clip")
@@ -85,7 +85,7 @@ def download_clip_mp3(canonical: str, outdir: Path, start: int, length_opt: Opti
 
     ydl_opts = dict(YTDL_BASE)
     ydl_opts["outtmpl"] = str(target.with_suffix(".%(ext)s"))
-    ydl_opts["postprocessor_args"] = ["-ss", str(start), "-t", str(clip_length)]
+    ydl_opts["postprocessor_args"] = ["-ss", str(startTime), "-t", str(clip_length)]
     with YoutubeDL(ydl_opts) as ydl:
         ydl.extract_info(canonical, download=True)
     return target
