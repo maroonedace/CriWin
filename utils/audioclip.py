@@ -49,21 +49,6 @@ def parse_ts(v: Optional[Union[str,int]]) -> Optional[int]:
     if ss>=60 or mm>=60 or min(hh,mm,ss)<0: raise ValueError("Invalid timestamp.")
     return hh*3600 + mm*60 + ss
 
-def safe_filename(name: str, ext=".mp3") -> str:
-    b = name.strip()
-    if b.lower().endswith(ext): b = b[:-len(ext)]
-    b = SAFE_NAME_RE.sub("_", b)
-    b = re.sub(r"\s+"," ", b).strip(" ._-") or "clip"
-    return f"{b[:100]}{ext}"
-
-def uniquify(path: Path) -> Path:
-    if not path.exists(): return path
-    i=1; stem,ext=path.stem, path.suffix
-    while True:
-        c = path.with_name(f"{stem}-{i}{ext}")
-        if not c.exists(): return c
-        i += 1
-
 def fetch_info(url: str) -> dict:
     with YoutubeDL(YTDL_META) as ydl: return ydl.extract_info(url, download=False)
 
@@ -81,7 +66,7 @@ def download_clip_mp3(canonical: str, outdir: Path, start: int, length_opt: Opti
 
     outdir.mkdir(parents=True, exist_ok=True)
     filename = filename_opt or (info.get("title") or "clip")
-    target = uniquify(outdir / safe_filename(filename, ".mp3"))
+    target = outdir / (filename + f".{AUDIO_CODEC}")
 
     ydl_opts = dict(YTDL_BASE)
     ydl_opts["outtmpl"] = str(target.with_suffix(".%(ext)s"))
