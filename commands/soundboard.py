@@ -15,6 +15,10 @@ def setup_soundboard(tree: app_commands.CommandTree):
     async def soundboard(interaction: Interaction, sound_name: str):
         data, base_dir = load_sounds()
         sounds = data.get("sounds")
+        if not sounds:
+            return await interaction.response.send_message(
+                "❌ No sounds are available. Try again later.", ephemeral=True
+            )
         file_name = next(filter(lambda sound: sound['display_name'] == sound_name, sounds), None)["file_name"]
         file_path = base_dir / file_name
 

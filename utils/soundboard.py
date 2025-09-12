@@ -7,7 +7,7 @@ from typing import Dict, Tuple, List
 import discord
 
 SOUNDS_JSON = Path("./sounds/sounds.json")
-_ID_RE = re.compile(r"^[a-zA-Z0-9_- ]{1,64}$")
+_ID_RE = re.compile(r"^[a-zA-Z0-9 _-]{1,64}$")
 
 _lock = threading.Lock()
 _cache: Dict[str, str] = {}
@@ -46,12 +46,13 @@ async def add_sound(
 
     with _lock:
         data, base_dir = load_sounds()
-        sounds = data.get("sounds")
+        sounds = data.get("sounds", [])
         for sound in sounds:
             if display_name in sound:
                 raise ValueError(f"Display Name '{display_name}' already exists.")
+        sound_id = 1 if not sounds else int(sounds[-1]["id"]) + 1
         sounds.append({
-            "id": int(sounds[-1]["id"]) + 1,
+            "id": sound_id,
             "display_name": display_name,
             "file_name": file.filename
         })
@@ -85,6 +86,8 @@ def delete_sound(sound_name: int) -> bool:
 def list_sounds(prefix: str, limit: int = 25) -> List[Tuple[str,str]]:
     data, _ = load_sounds()
     sounds = data.get("sounds")
+    if not sounds:
+        return []
     soundValues = sounds[:limit]
     if not prefix:
         return soundValues
