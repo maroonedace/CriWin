@@ -7,7 +7,7 @@ from typing import Dict, Tuple, List
 import discord
 
 SOUNDS_JSON = Path("./sounds/sounds.json")
-_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
+_ID_RE = re.compile(r"^[a-zA-Z0-9_- ]{1,64}$")
 
 _lock = threading.Lock()
 _cache: Dict[str, str] = {}
