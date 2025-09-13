@@ -11,7 +11,7 @@ active_downloads: set[int] = set()
 def setup_audioclip(tree: app_commands.CommandTree):
     @tree.command(
         name="audioclip",
-        description=f"Turns a YouTube share link into an audio clip (up to 5 minutes)."
+        description=f"Turns a YouTube share link into an mp3 audio clip (up to 5 minutes)."
     )
     @app_commands.describe(
         url="YouTube Share URL",
@@ -58,5 +58,6 @@ def setup_audioclip(tree: app_commands.CommandTree):
 
         except Exception as e:
             await interaction.followup.send(f"❌ {e}", ephemeral=True)
+            active_downloads.discard(user_id)
         finally:
             active_downloads.discard(user_id)

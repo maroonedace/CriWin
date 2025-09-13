@@ -24,7 +24,7 @@ def setup_soundboard(tree: app_commands.CommandTree):
 
         if not file_path:
             return await interaction.response.send_message(
-                "❌ That sound isn't available anymore. Try another.", ephemeral=True
+                "❌ That sound isn't available. Try another.", ephemeral=True
             )
         
         user = interaction.user
@@ -86,6 +86,7 @@ def setup_soundboard(tree: app_commands.CommandTree):
         file: discord.Attachment,
     ):
         await interaction.response.defer(ephemeral=True)
+        print(file.content_type)
         try:
             await add_sound(display_name.strip(), file)
         except Exception as e:

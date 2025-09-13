@@ -6,25 +6,52 @@ from typing import Dict, Tuple, List
 
 import discord
 
-SOUNDS_JSON = Path("./sounds/sounds.json")
-_ID_RE = re.compile(r"^[a-zA-Z0-9 _-]{1,64}$")
+# Regular expression for validating sound IDs
+ID_RE = re.compile(r"^[a-zA-Z0-9 _-]{1,64}$")
 
+# Define the location of the JSON file
+SOUNDS_JSON = Path("./sounds/sounds.json")
+
+# Lock to ensure thread-safety
 _lock = threading.Lock()
+
+# Global cache and settings
 _cache: Dict[str, str] = {}
 _cache_mtime: float = -1.0
 _base_dir = Path("./sounds")
 
+allowed_content_types = {'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/aac'}
+
 def load_sounds() -> Tuple[Dict[str, List], Path]:
     global _cache, _cache_mtime, _base_dir
+    # Ensure the 'sounds' directory exists
+    if not _base_dir.exists():
+        _base_dir.mkdir(parents=True, exist_ok=True)
+    
+    if not SOUNDS_JSON.exists():
+        # Create the directory if it doesn't exist (redundant, but safe)
+        SOUNDS_JSON.parent.mkdir(parents=True, exist_ok=True)
+
+        # Create the JSON file with the default content
+        with open(SOUNDS_JSON, 'w', encoding='utf-8') as f:
+            json.dump({"sounds": []}, f)
+
+        _cache = {"sounds": []}
+        _cache_mtime = -1.0
+        return _cache, _base_dir
+
     try:
         mtime = SOUNDS_JSON.stat().st_mtime
-    except FileNotFoundError:
-        _cache, _cache_mtime = {}, -1.0
-        _base_dir = Path("./sounds")
+    except Exception as e:
+        print(f"Error getting file stats: {e}")
         return _cache, _base_dir
 
     if mtime != _cache_mtime:
-        data = json.loads(SOUNDS_JSON.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(SOUNDS_JSON.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"Error reading JSON file: {e}")
+            return _cache, _base_dir
         _cache = data
         _cache_mtime = mtime
         _base_dir = Path(_cache.get("base_dir", "./sounds"))
@@ -39,10 +66,12 @@ async def add_sound(
     display_name: str,
     file: discord.Attachment,
 ) -> None:
-    if not _ID_RE.match(display_name):
-        raise ValueError("Display Name must be lowercase letters/numbers/underscore/hyphen (≤64 chars).")
+    if not ID_RE.match(display_name):
+        raise ValueError("Display Name must be less than 64 characters.")
     if not file:
         raise ValueError("File is required.")
+    if file.content_type not in allowed_content_types:
+        raise ValueError("Only audio files are allowed (Ex. .mp3, .wav, etc.).")
 
     with _lock:
         data, base_dir = load_sounds()
@@ -73,7 +102,6 @@ def delete_sound(sound_name: int) -> bool:
             return False
         
         filename = entry.get("file_name")
-        print(entry)
         file_path = (base_dir / filename)
         try:
             file_path.unlink()

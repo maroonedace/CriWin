@@ -18,18 +18,20 @@ YTDL_BASE = {
     "quiet": True, "noplaylist": True,
 }
 
-def parse_t(raw: str) -> Optional[int]:
+def parse_start_time(raw: str) -> Optional[int]:
     if not raw: return None
     sec = raw.replace("s", "")
-    return int(sec)
+    try:
+        return int(sec)
+    except ValueError:
+        return None
 
 def parse_share_link(url: str) -> Tuple[str, int]:
     if not (YTD_BE_RE.match(url) or SHORTS_RE.match(url)):
-        raise ValueError("Only share links are accepted (youtu.be/... or youtube.com/shorts/...).")
+        raise ValueError("Only short or video share links are accepted (youtu.be/... or youtube.com/shorts/...).")
     p = urlparse(url); qs = parse_qs(p.query)
-    if "list" in qs: raise ValueError("Playlist links are not supported.")
     startTime = 0
-    if qs.get("t"): startTime = max(0, parse_t(qs["t"][0]) or 0)
+    if qs.get("t"): startTime = max(0, parse_start_time(qs["t"][0]) or 0)
     videoId = p.path.strip("/").split("/")[-1]
     if not re.fullmatch(r"[\w-]{11}", videoId): raise ValueError("Invalid video id.")
     return videoId, startTime
@@ -40,25 +42,21 @@ def parse_ts(v: Optional[Union[str,int]]) -> Optional[int]:
         if v<0: raise ValueError("Time cannot be negative."); 
         return v
     parts = v.strip().split(":")
-    if not parts or not all(p.isdigit() for p in parts): raise ValueError("Use SS, MM:SS, or HH:MM:SS.")
+    if not parts or not all(p.isdigit() for p in parts): raise ValueError("Use SS or MM:SS")
     parts = [int(p) for p in parts]
-    if len(parts)==1: hh,mm,ss=0,0,parts[0]
-    elif len(parts)==2: hh,mm,ss=0,parts[0],parts[1]
-    elif len(parts)==3: hh,mm,ss=parts
-    else: raise ValueError("Use SS, MM:SS, or HH:MM:SS.")
-    if ss>=60 or mm>=60 or min(hh,mm,ss)<0: raise ValueError("Invalid timestamp.")
-    return hh*3600 + mm*60 + ss
+    if len(parts)== 1: mm,ss=0,parts[0]
+    elif len(parts)==2: mm,ss=parts
+    else: raise ValueError("Use SS or MM:SS.")
+    if ss>=60 or mm>=60 or min(mm,ss)<0: raise ValueError("Invalid timestamp.")
+    return mm*60 + ss
 
 def fetch_info(url: str) -> dict:
     with YoutubeDL(YTDL_META) as ydl: return ydl.extract_info(url, download=False)
 
-def download_clip_mp3(canonical: str, outdir: Path, start: int, length_opt: Optional[int], filename_opt: Optional[str]) -> Path:
+def download_clip_mp3(canonical: str, outdir: Path, startTime: int, length_opt: Optional[int], filename_opt: Optional[str]) -> Path:
     info = fetch_info(canonical)
-    if info.get("is_live") or info.get("live_status") == "is_live":
-        raise ValueError("Live streams aren't supported.")
     duration = int(info.get("duration") or 0)
 
-    startTime = max(0, int(start))
     clip_length = max(1, min(int(length_opt), MAX_CLIP_SECONDS)) if length_opt is not None else MAX_CLIP_SECONDS
     if duration:
         if startTime >= duration: raise ValueError("Start time is beyond the end of the video.")
