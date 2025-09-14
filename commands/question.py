@@ -9,6 +9,6 @@ def setup_question(tree: app_commands.CommandTree):
     async def question(interaction: Interaction, *, query: str):
         await interaction.response.defer(ephemeral=True)
         message = {'role': 'user', 'content': query}
-        response: ChatResponse = await AsyncClient().chat(model='qwen3:1.7b', messages=[message])
+        response: ChatResponse = await AsyncClient().chat(model='qwen3:0.6b', messages=[message])
         cleaned_content = re.sub(r'<think>.*?</think>', '', response['message']['content'], flags=re.DOTALL).strip()
         await interaction.followup.send(f"{cleaned_content}", ephemeral=True)
