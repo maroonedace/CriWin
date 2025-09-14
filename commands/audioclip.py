@@ -1,9 +1,8 @@
 import asyncio
 from pathlib import Path
 from typing import Optional
-
 from discord import app_commands, File, Interaction
-from utils.audioclip import parse_share_link, parse_ts, download_clip_mp3
+from utils.audioclip import validate_youtube_url, parse_ts, download_clip_mp3
 
 DOWNLOAD_DIR = Path("downloads")
 active_downloads: set[int] = set()
@@ -28,7 +27,7 @@ def setup_audioclip(tree: app_commands.CommandTree):
             )
 
         try:
-            videoId, startTime = parse_share_link(url)
+            videoId, startTime = validate_youtube_url(url)
         except ValueError as ve:
             return await interaction.response.send_message(f"❌ {ve}", ephemeral=True)
 

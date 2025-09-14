@@ -1,4 +1,4 @@
-from .question import setup_question
+from .instruction import setup_instruction
 from .leave import setup_leave
 from .audioclip import setup_audioclip
 from .soundboard import setup_soundboard
@@ -8,4 +8,4 @@ def setup_all(tree: app_commands.CommandTree):
     setup_audioclip(tree)
     setup_soundboard(tree)
     setup_leave(tree)
-    setup_question(tree)
+    setup_instruction(tree)
