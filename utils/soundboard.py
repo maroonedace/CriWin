@@ -7,7 +7,7 @@ from typing import Dict, Tuple, List
 import discord
 
 # Regular expression for validating sound IDs
-ID_RE = re.compile(r"^[a-zA-Z0-9 _-]{1,64}$")
+ID_RE = re.compile(r"^[a-zA-Z0-9 _'-]{1,64}$")
 
 # Define the location of the JSON file
 SOUNDS_JSON = Path("./sounds/sounds.json")
@@ -120,4 +120,8 @@ def list_sounds(prefix: str, limit: int = 25) -> List[Tuple[str,str]]:
     if not prefix:
         return soundValues
     p = prefix.lower()
-    return filter(lambda sound: p in sound.display_name.lower(), soundValues)[:limit]
+    prefixSounds = filter(lambda sound: sound['display_name'].lower().startswith(p), soundValues)
+    result = list(prefixSounds)
+    return result
+
+    

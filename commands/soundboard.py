@@ -86,7 +86,6 @@ def setup_soundboard(tree: app_commands.CommandTree):
         file: discord.Attachment,
     ):
         await interaction.response.defer(ephemeral=True)
-        print(file.content_type)
         try:
             await add_sound(display_name.strip(), file)
         except Exception as e:
