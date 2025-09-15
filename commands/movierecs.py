@@ -30,9 +30,8 @@ def setup_movierecs(tree: app_commands.CommandTree):
         ratings_df = pd.read_csv(base_dir / 'ratings.csv')
         movies_df = pd.read_csv(base_dir / 'movies.csv')
         
-        movies_df = movies_df[['title', 'genres']]
-        
-        user_item_matrix = ratings_df.pivot(index=['userId'], columns=['movieId'], values='rating').fillna(0)
+        average_ratings = ratings_df.groupby('movieId')['rating'].mean().reset_index()
+        average_ratings.columns = ['movieId', 'avg_rating']
 
         # Split the genres string into a list of genres
         movies_df['genres'] = movies_df['genres'].str.split('|')
