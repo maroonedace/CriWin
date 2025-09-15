@@ -1,5 +1,5 @@
 from discord import Interaction, app_commands
-from ollama import AsyncClient, ChatResponse
+from ollama import AsyncClient
 import asyncio
 
 # Use a lock to ensure only one instruction is processed at a time
