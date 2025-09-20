@@ -89,7 +89,7 @@ def validate_clip_parameters(
         clip_length = duration - start_time
     return start_time, clip_length
 
-def download_clip_mp3(canonical: str, outdir: Path, startTime: int, length_opt: Optional[int], filename_opt: Optional[str]) -> Path:
+def download_clip_mp3(canonical: str, outdir: Path, start_time: int, clip_length: Optional[int], filename_opt: Optional[str]) -> Path:
     """Download a YouTube video clip as an audio file."""
     try:
         info = fetch_info(canonical)
