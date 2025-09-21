@@ -102,7 +102,7 @@ def delete_sound(display_name: str) -> bool:
         sounds = data.get("sounds", [])
         for sound in sounds:
             if sound["display_name"] == display_name:
-                file_path = base_dir / sound["file_path"]
+                file_path = base_dir / sound["file_name"]
                 try:
                     file_path.unlink()
                 except Exception as e:
