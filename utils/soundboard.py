@@ -27,8 +27,7 @@ def load_sounds() -> Tuple[Dict[str, List], Path]:
     global _cache, _cache_mtime, _base_dir
     
     # Ensure the 'sounds' directory exists
-    if not _base_dir.exists():
-        _base_dir.mkdir(parents=True, exist_ok=True)
+    _base_dir.mkdir(parents=True, exist_ok=True)
     
     if not SOUNDS_JSON.exists():
         SOUNDS_JSON.parent.mkdir(parents=True, exist_ok=True)
@@ -57,8 +56,11 @@ def load_sounds() -> Tuple[Dict[str, List], Path]:
 
 def save_index_atomic(data: dict) -> None:
     tmp = SOUNDS_JSON.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    tmp.replace(SOUNDS_JSON)  # atomic on the same filesystem
+    try:
+        tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        tmp.replace(SOUNDS_JSON)  # atomic on the same filesystem
+    except Exception as e:
+        print(f"Error saving file atomically: {e}")
 
 async def add_sound(
     display_name: str,
@@ -76,16 +78,21 @@ async def add_sound(
     with _lock:
         data, base_dir = load_sounds()
         sounds = data.get("sounds", [])
-        for sound in sounds:
-            if display_name == sound["display_name"]:
-                raise ValueError(f"Display Name '{display_name}' already exists.")
-            
+        
+        # Check for duplicate display names
+        if any(sound["display_name"] == display_name for sound in sounds):
+            raise ValueError(f"Display Name '{display_name}' already exists.")
+        
+        # Check for duplicate file names
         file_path = base_dir / file.filename
         if file_path.exists():
             raise ValueError(f"File '{file_path}' already exists.")
         
+        # Save the file
         await file.save(file_path)
-        sound_id = 1 if not sounds else int(sounds[-1]["id"]) + 1
+        
+        # Assign a unique ID
+        sound_id = 1 if not sounds else max(sound["id"] for sound in sounds) + 1
         sounds.append({
             "id": sound_id,
             "display_name": display_name,
@@ -119,6 +126,9 @@ def list_sounds(prefix: str, limit: int = 25) -> List[Tuple[str,str]]:
     """List all sounds matching the given prefix."""
     data, _ = load_sounds()
     sounds = data.get("sounds", [])
+    if not sounds:
+        return []
+    
     if not prefix:
         return sounds[:limit]
     p = prefix.lower()
