@@ -2,8 +2,8 @@ import os
 
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
 
-YOUTUBE_COOKIE_FILE = "/criwin/www.youtube.com_cookies.txt"
-INSTAGRAM_COOKIE_FILE = "/criwin/www.instagram.com_cookies.txt"
+YOUTUBE_COOKIE_FILE = "/criwin/cookies/www.youtube.com_cookies.txt"
+INSTAGRAM_COOKIE_FILE = "/criwin/cookies/www.instagram.com_cookies.txt"
 
 COOKIE_MAP = {
     "youtube.com": YOUTUBE_COOKIE_FILE,

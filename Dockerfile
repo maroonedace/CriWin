@@ -5,27 +5,17 @@ FROM python:3.12-slim
 WORKDIR /criwin
 
 # Install OS libraries
-RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y ffmpeg libpq-dev gcc curl unzip && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg libpq-dev gcc curl unzip && \
     curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh && \
     rm -rf /var/lib/apt/lists/*
 
-    # Create required directories
+# Create required directories
 RUN mkdir -p cache/sounds downloads
 
-RUN pip install --no-cache-dir \
-    "yt-dlp[default]" \
-    "discord.py[voice]>=2.7.0" \
-    davey \
-    dotenv \
-    psycopg2-binary \
-    minio \
-    gallery-dl \
-    pillow
-
-# Copy cookies file
-COPY www.youtube.com_cookies.txt ./www.youtube.com_cookies.txt
-COPY www.instagram.com_cookies.txt ./www.instagram.com_cookies.txt
+# Install required libraries
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY src/ ./src/

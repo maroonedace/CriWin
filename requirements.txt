@@ -1,0 +1,9 @@
+pytest==9.0.3
+discord.py[voice]==2.7.1
+yt-dlp[default]==2026.3.17
+davey==0.1.5
+python-dotenv==1.2.2
+psycopg2-binary==2.9.12
+minio==7.2.20
+gallery-dl==1.32.2
+pillow==12.2.0

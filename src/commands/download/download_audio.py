@@ -54,10 +54,10 @@ async def setup_download_audio(interaction: Interaction, active_downloads: set[i
         discord_file = File(str(file_path))
 
         if is_hidden:
-            await interaction.followup.send(files=discord_file, ephemeral=True)
+            await interaction.followup.send(file=discord_file, ephemeral=True)
             return
         
-        await interaction.followup.send(files=discord_file, content=DOWNLOAD_SENT_TO_CHANNEL_MESSAGE)
+        await interaction.followup.send(file=discord_file, content=DOWNLOAD_SENT_TO_CHANNEL_MESSAGE)
 
         logger.info("Audio download completed for user %s", user_id)
         
