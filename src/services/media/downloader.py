@@ -9,9 +9,9 @@ from PIL import Image
 from yt_dlp import YoutubeDL
 from gallery_dl import config, job
 
+from src.services import cookies
 from src.services.media.constants import (
-    COOKIE_MAP,
-    INSTAGRAM_COOKIE_FILE,
+    COOKIE_DOMAINS,
     LIVE_STREAM_MESSAGE,
     URL_INVALID_MESSAGE,
     UNSUPPORTED_URL_MESSAGE,
@@ -25,18 +25,28 @@ from src.services.media.constants import (
 logger = logging.getLogger(__name__)
 
 
-def get_cookie_file(url: str) -> str | None:
-    """Return the appropriate cookie file path for the given URL domain."""
+def _cookie_name(url: str) -> str | None:
+    """Return the logical cookie name for the URL's host, if supported."""
     hostname = urlparse(url).hostname or ""
-    for domain, cookie_path in COOKIE_MAP.items():
+    for domain, name in COOKIE_DOMAINS.items():
         if hostname == domain or hostname.endswith(f".{domain}"):
-            return cookie_path
+            return name
     return None
 
 
 def is_supported_url(url: str) -> bool:
     """Check if the URL belongs to a supported platform."""
-    return get_cookie_file(url) is not None
+    return _cookie_name(url) is not None
+
+
+def get_cookie_file(url: str) -> str | None:
+    """Fetch the current cookie for the URL's platform into the local cache and
+    return its path, or None if unsupported or no cookie is available."""
+    name = _cookie_name(url)
+    if name is None:
+        return None
+    path = cookies.fetch_to_cache(name)
+    return str(path) if path else None
 
 def is_instagram_url(url: str) -> bool:
     """Check if the URL is from Instagram."""
@@ -168,11 +178,14 @@ def gallery_downloader(url: str) -> Union[list[Path], Path]:
 
     config.load()
     config.set((), "base-directory", str(download_path))
-    config.set(
-        ("extractor",),
-        "instagram",
-        {"cookies": INSTAGRAM_COOKIE_FILE},
-    )
+
+    instagram_cookie = cookies.fetch_to_cache("instagram")
+    if instagram_cookie is not None:
+        config.set(
+            ("extractor",),
+            "instagram",
+            {"cookies": str(instagram_cookie)},
+        )
 
     try:
         download_job = job.DownloadJob(url)

@@ -1,18 +1,15 @@
 import os
-from pathlib import Path
 
 from src.config import Config
 
 DOWNLOAD_DIR = Config.DOWNLOAD_DIR
-COOKIE_DIR = Config.COOKIE_DIR
 
-YOUTUBE_COOKIE_FILE = str(Path(COOKIE_DIR) / "www.youtube.com_cookies.txt")
-INSTAGRAM_COOKIE_FILE = str(Path(COOKIE_DIR) / "www.instagram.com_cookies.txt")
-
-COOKIE_MAP = {
-    "youtube.com": YOUTUBE_COOKIE_FILE,
-    "youtu.be": YOUTUBE_COOKIE_FILE,
-    "instagram.com": INSTAGRAM_COOKIE_FILE,
+# URL host -> logical cookie name. The cookie is stored in object storage at
+# cookies/<name>.txt and cached locally at COOKIE_DIR/<name>.txt.
+COOKIE_DOMAINS = {
+    "youtube.com": "youtube",
+    "youtu.be": "youtube",
+    "instagram.com": "instagram",
 }
 
 DEFAULT_UPLOAD_LIMIT_MB = 10

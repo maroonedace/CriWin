@@ -69,6 +69,12 @@ def remove(key: str) -> None:
     get_client().delete_object(Bucket=Config.STORAGE_BUCKET_NAME, Key=key)
 
 
+def list_keys(prefix: str = "") -> list[str]:
+    """List object keys under a prefix."""
+    response = get_client().list_objects_v2(Bucket=Config.STORAGE_BUCKET_NAME, Prefix=prefix)
+    return [obj["Key"] for obj in response.get("Contents", [])]
+
+
 def presigned_url(key: str, expires_in: int = 3600) -> str:
     """Return a time-limited GET URL for ``key`` (e.g. for the admin panel)."""
     return get_client().generate_presigned_url(
