@@ -1,3 +1,6 @@
+from pathlib import Path
+from unittest.mock import patch
+
 from src.services.media.downloader import (
     get_cookie_file,
     inject_cookies,
@@ -5,21 +8,43 @@ from src.services.media.downloader import (
     is_instagram_url,
     is_supported_url,
 )
-from src.services.media.constants import INSTAGRAM_COOKIE_FILE, YOUTUBE_COOKIE_FILE
 
 
-class TestCookieResolution:
-    def test_youtube_domain(self):
-        assert get_cookie_file("https://www.youtube.com/watch?v=abc") == YOUTUBE_COOKIE_FILE
+class TestGetCookieFile:
+    def test_supported_url_fetches_named_cookie(self):
+        with patch(
+            "src.services.media.downloader.cookies.fetch_to_cache",
+            return_value=Path("/cache/cookies/youtube.txt"),
+        ) as fetch:
+            result = get_cookie_file("https://www.youtube.com/watch?v=abc")
 
-    def test_youtu_be_domain(self):
-        assert get_cookie_file("https://youtu.be/abc") == YOUTUBE_COOKIE_FILE
+        fetch.assert_called_once_with("youtube")
+        assert result == "/cache/cookies/youtube.txt"
 
-    def test_instagram_domain(self):
-        assert get_cookie_file("https://www.instagram.com/p/abc/") == INSTAGRAM_COOKIE_FILE
+    def test_youtu_be_maps_to_youtube(self):
+        with patch(
+            "src.services.media.downloader.cookies.fetch_to_cache",
+            return_value=Path("/c/youtube.txt"),
+        ) as fetch:
+            get_cookie_file("https://youtu.be/abc")
 
-    def test_unsupported_domain_returns_none(self):
+        fetch.assert_called_once_with("youtube")
+
+    def test_instagram_url_fetches_instagram_cookie(self):
+        with patch(
+            "src.services.media.downloader.cookies.fetch_to_cache",
+            return_value=Path("/c/instagram.txt"),
+        ) as fetch:
+            get_cookie_file("https://www.instagram.com/p/abc/")
+
+        fetch.assert_called_once_with("instagram")
+
+    def test_unsupported_url_returns_none(self):
         assert get_cookie_file("https://example.com/video") is None
+
+    def test_missing_cookie_returns_none(self):
+        with patch("src.services.media.downloader.cookies.fetch_to_cache", return_value=None):
+            assert get_cookie_file("https://youtu.be/abc") is None
 
 
 class TestUrlPredicates:
