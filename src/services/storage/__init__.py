@@ -40,6 +40,10 @@ def _ensure_bucket(client) -> None:
     except ClientError:
         params = {"Bucket": bucket}
         region = Config.STORAGE_REGION
+        # AWS S3 quirk: us-east-1 must NOT be sent as an explicit LocationConstraint
+        # (it is the default region and AWS rejects it), while every OTHER region
+        # (us-west-1, eu-west-1, ...) requires one. A None/empty region is the
+        # MinIO/dev path, which takes a plain create_bucket.
         if region and region != "us-east-1":
             params["CreateBucketConfiguration"] = {"LocationConstraint": region}
         client.create_bucket(**params)

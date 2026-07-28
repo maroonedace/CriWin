@@ -14,7 +14,7 @@ class DatabaseOperations:
         conn = get_database_connection()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT name, file_name FROM sounds ORDER BY name;")
+                cursor.execute("SELECT name, file_name, volume FROM sounds ORDER BY name;")
                 sound_items = cursor.fetchall()
 
                 # Convert to list of dicts
@@ -55,3 +55,18 @@ class DatabaseOperations:
         except Exception as e:
             conn.rollback()
             raise ValueError(f"{ErrorMessages.DELETE_DATABASE}: {str(e)}")
+
+    @staticmethod
+    def set_volume(name: str, volume: float) -> None:
+        """Update a sound's playback volume"""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE sounds SET volume = %s WHERE name = %s;",
+                    (volume, name)
+                )
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"Could not update sound volume: {str(e)}")
