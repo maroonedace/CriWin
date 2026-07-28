@@ -17,7 +17,7 @@ from src.services.media import is_file_too_large, video_downloader
 
 logger = logging.getLogger(__name__)
 
-async def setup_download_audio(interaction: Interaction, active_downloads: set[int], url: str, is_hidden: bool) -> None:
+async def handle_download_audio(interaction: Interaction, active_downloads: set[int], url: str, is_hidden: bool) -> None:
     # Acknowledge the interaction and defer response
     await interaction.response.defer(ephemeral=is_hidden)
 

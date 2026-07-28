@@ -2,7 +2,8 @@ import pytest
 from unittest.mock import AsyncMock, Mock, patch
 from discord import Interaction, User, VoiceState
 
-from src.commands.soundboard.add import DISPLAY_NAME_INVALID_MESSAGE, DUPLICATE_DISPLAY_NAME_MESSAGE, INVALID_AUDIO_MESSAGE, setup_soundboard_add
+from src.commands.soundboard.add import handle_add
+from src.commands.soundboard.constants import DISPLAY_NAME_INVALID_MESSAGE, DUPLICATE_DISPLAY_NAME_MESSAGE, INVALID_AUDIO_MESSAGE
 
 class TestSoundboardAdd:
     user_id = 123456789
@@ -34,7 +35,7 @@ class TestSoundboardAdd:
             mock_sounds.return_value = [{"name": "Red Flags", "file_name": "test_sound.mp3"}]
             with patch('src.commands.soundboard.add.send_message', new_callable=AsyncMock) as mock_send_message:
                 # Add user to active downloads
-                await setup_soundboard_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
+                await handle_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
                 
                 # Assert that send_message was called with correct arguments
                 mock_send_message.assert_called_once_with(
@@ -54,7 +55,7 @@ class TestSoundboardAdd:
             mock_sounds.return_value = [{"name": "Red Flags", "file_name": "test_sound.mp3"}]
             with patch('src.commands.soundboard.add.send_message', new_callable=AsyncMock) as mock_send_message:
                 # Add user to active downloads
-                await setup_soundboard_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
+                await handle_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
                 
                 # Assert that send_message was called with correct arguments
                 mock_send_message.assert_called_once_with(
@@ -74,7 +75,7 @@ class TestSoundboardAdd:
             mock_sounds.return_value = [{"name": "Red Flags", "file_name": "test_sound.mp3"}]
             with patch('src.commands.soundboard.add.send_message', new_callable=AsyncMock) as mock_send_message:
                 # Add user to active downloads
-                await setup_soundboard_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
+                await handle_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
                 
                 # Assert that send_message was called with correct arguments
                 mock_send_message.assert_called_once_with(
@@ -96,7 +97,7 @@ class TestSoundboardAdd:
                 mock_upload_sound_file.side_effect = ValueError("Could not upload sound file.")
                 with patch('src.commands.soundboard.add.send_message', new_callable=AsyncMock) as mock_send_message:
                     # Add user to active downloads
-                    await setup_soundboard_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
+                    await handle_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
                     
                     # Assert that send_message was called with correct arguments
                     mock_send_message.assert_called_once_with(
@@ -117,7 +118,7 @@ class TestSoundboardAdd:
             with patch('src.commands.soundboard.add.upload_sound_file'):
                 with patch('src.commands.soundboard.add.send_message', new_callable=AsyncMock) as mock_send_message:
                     # Add user to active downloads
-                    await setup_soundboard_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
+                    await handle_add(mock_valid_interaction, mock_sound_name, mock_sound_file)
                     
                     # Assert that send_message was called with correct arguments
                     mock_send_message.assert_called_once_with(

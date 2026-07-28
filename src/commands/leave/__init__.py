@@ -1,5 +1,5 @@
 from discord import Interaction, app_commands
-from src.commands.leave.setup import handle_leave
+from src.commands.leave.leave import handle_leave
 
 def setup_leave(tree: app_commands.CommandTree):
     """Setup the leave command"""
