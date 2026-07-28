@@ -12,8 +12,8 @@ from src.commands.download.constants import (
 )
 
 from src.core.messaging import send_message
-from src.download.constants import BOOST_LEVEL_UPLOAD_SIZE, DEFAULT_UPLOAD_LIMIT_MB
-from src.download.utils import gallery_downloader, is_file_too_large, is_instagram_url, video_downloader
+from src.services.media.constants import BOOST_LEVEL_UPLOAD_SIZE, DEFAULT_UPLOAD_LIMIT_MB
+from src.services.media import gallery_downloader, is_file_too_large, is_instagram_url, video_downloader
 
 logger = logging.getLogger(__name__)
 

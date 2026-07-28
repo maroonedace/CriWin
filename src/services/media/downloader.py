@@ -9,7 +9,7 @@ from PIL import Image
 from yt_dlp import YoutubeDL
 from gallery_dl import config, job
 
-from src.download.constants import (
+from src.services.media.constants import (
     COOKIE_MAP,
     INSTAGRAM_COOKIE_FILE,
     LIVE_STREAM_MESSAGE,
