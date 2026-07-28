@@ -33,7 +33,8 @@ async def handle_add(interaction: Interaction, sound_name: str, sound_file: disc
         return
 
     try:
-        await upload_sound_file(sound_name, sound_file)
+        data = await sound_file.read()
+        await upload_sound_file(sound_name, data, sound_file.filename, sound_file.content_type)
     except ValueError as err:
         await send_message(interaction, str(err))
         return
