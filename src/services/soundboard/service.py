@@ -51,6 +51,12 @@ async def delete_sound(name: str, file_name: str) -> None:
         raise ValueError(f"Could not delete sound file: {e}")
 
 
+def set_volume(name: str, volume: float) -> None:
+    """Update a sound's playback volume."""
+    DatabaseOperations.set_volume(name, volume)
+    SoundCache.invalidate()
+
+
 def download_sound_file(file_name: str) -> None:
     """Download sound file from object storage to the local cache"""
     SoundCache.ensure_cache_dir()

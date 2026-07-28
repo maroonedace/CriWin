@@ -52,6 +52,11 @@ class Config:
     # Object-storage key prefix for soundboard files
     SOUNDBOARD_DIR = "soundboard"
 
+    # Admin web panel
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    ADMIN_HOST = os.getenv("ADMIN_HOST", "0.0.0.0")
+    ADMIN_PORT = int(os.getenv("ADMIN_PORT", "8080"))
+
 
 def validate_config() -> int:
     """Validate required configuration, exiting the process if it is missing.
