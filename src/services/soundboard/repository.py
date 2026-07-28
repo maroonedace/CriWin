@@ -16,6 +16,8 @@ def get_database_connection():
     if _db_connection is None or _db_connection.closed:
         try:
             _db_connection = psycopg2.connect(
+                host=Config.POSTGRES_HOST,
+                port=Config.POSTGRES_PORT,
                 database=Config.POSTGRES_DB,
                 user=Config.POSTGRES_USER,
                 password=Config.POSTGRES_PASSWORD,
