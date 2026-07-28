@@ -1,6 +1,8 @@
 import os
 
-DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
+from src.config import Config
+
+DOWNLOAD_DIR = Config.DOWNLOAD_DIR
 
 YOUTUBE_COOKIE_FILE = "/criwin/cookies/www.youtube.com_cookies.txt"
 INSTAGRAM_COOKIE_FILE = "/criwin/cookies/www.instagram.com_cookies.txt"

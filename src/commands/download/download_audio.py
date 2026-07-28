@@ -11,7 +11,7 @@ from src.commands.download.constants import (
     LIMIT_DOWNLOAD_MESSAGE,
 )
 
-from src.commands.utils import send_message
+from src.core.messaging import send_message
 from src.download.constants import BOOST_LEVEL_UPLOAD_SIZE, DEFAULT_UPLOAD_LIMIT_MB
 from src.download.utils import is_file_too_large, video_downloader
 

@@ -2,7 +2,7 @@ import logging
 
 from discord import Intents, Message, app_commands, Object, Client
 from src.commands import setup_commands
-from src.messages import handle_dm_message
+from src.events import handle_dm_message
 
 logger = logging.getLogger(__name__)
 

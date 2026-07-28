@@ -1,6 +1,4 @@
 import json
-import os
-from pathlib import Path
 import time
 from typing import Any, Dict, List
 import psycopg2
@@ -8,35 +6,8 @@ from psycopg2.extras import RealDictCursor
 from minio import Minio
 from discord import app_commands
 import discord
-from dotenv import load_dotenv
 
-
-# Setting up to load ENV values
-load_dotenv()
-
-class Config:
-    # Cache configuration
-    CACHE_DIR = Path("cache")
-    CACHE_FILE = CACHE_DIR / "sounds_cache.json"
-    CACHE_TIMESTAMP_FILE = CACHE_DIR / "sounds_cache_timestamp.txt"
-    CACHE_EXPIRY_SECONDS = 300  # 5 minutes
-
-    # PostgreSQL Database
-    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-    POSTGRES_DB = os.getenv("POSTGRES_DB", "discord_bot")
-    POSTGRES_USER = os.getenv("POSTGRES_USER", "discord_bot")
-    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-
-    # MinIO S3
-    MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
-    MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
-    MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
-    MINIO_BUCKET_NAME = os.getenv("MINIO_BUCKET_NAME", "soundboard")
-    MINIO_USE_SSL = os.getenv("MINIO_USE_SSL", "false").lower() == "true"
-
-    # Soundboard directory
-    SOUNDBOARD_DIR = "soundboard"
+from src.config import Config
 
 
 class ErrorMessages:
@@ -134,15 +105,15 @@ class ClientFactory:
         if ClientFactory._minio_client is None:
             try:
                 ClientFactory._minio_client = Minio(
-                    Config.MINIO_ENDPOINT,
-                    access_key=Config.MINIO_ACCESS_KEY,
-                    secret_key=Config.MINIO_SECRET_KEY,
-                    secure=Config.MINIO_USE_SSL
+                    Config.STORAGE_ENDPOINT,
+                    access_key=Config.STORAGE_ACCESS_KEY,
+                    secret_key=Config.STORAGE_SECRET_KEY,
+                    secure=Config.STORAGE_USE_SSL
                 )
                 
                 # Ensure bucket exists
-                if not ClientFactory._minio_client.bucket_exists(Config.MINIO_BUCKET_NAME):
-                    ClientFactory._minio_client.make_bucket(Config.MINIO_BUCKET_NAME)
+                if not ClientFactory._minio_client.bucket_exists(Config.STORAGE_BUCKET_NAME):
+                    ClientFactory._minio_client.make_bucket(Config.STORAGE_BUCKET_NAME)
                     
             except Exception as e:
                 raise ValueError(f"{ErrorMessages.S3_CLIENT}: {str(e)}")
@@ -210,7 +181,7 @@ class S3Operations:
             from io import BytesIO
             
             client.put_object(
-                Config.MINIO_BUCKET_NAME,
+                Config.STORAGE_BUCKET_NAME,
                 f"{Config.SOUNDBOARD_DIR}/{file.filename}",
                 BytesIO(file_data),
                 length=len(file_data),
@@ -225,7 +196,7 @@ class S3Operations:
         client = ClientFactory.get_minio_client()
         try:
             client.remove_object(
-                Config.MINIO_BUCKET_NAME,
+                Config.STORAGE_BUCKET_NAME,
                 f"{Config.SOUNDBOARD_DIR}/{file_name}"
             )
         except Exception as e:
@@ -240,7 +211,7 @@ class S3Operations:
             SoundCache.ensure_cache_dir()
             
             client.fget_object(
-                Config.MINIO_BUCKET_NAME,
+                Config.STORAGE_BUCKET_NAME,
                 f"{Config.SOUNDBOARD_DIR}/{file_name}",
                 str(local_path)
             )
