@@ -2,7 +2,7 @@ from discord import Interaction
 import discord
 import re
 
-from src.commands.soundboard.utils import get_sounds, upload_sound_file
+from src.services.soundboard import get_sounds, upload_sound_file
 from src.core.messaging import send_message
 
 # Regular expression for validating sound IDs
