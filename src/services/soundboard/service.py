@@ -1,9 +1,11 @@
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from discord import app_commands
 
 from src.config import Config
 from src.services import storage
+from src.services.audio import normalize_audio
 from src.services.soundboard.cache import FileOperations, SoundCache
 from src.services.soundboard.repository import DatabaseOperations
 
@@ -30,7 +32,8 @@ async def upload_sound_file(
     upload), not a ``discord.Attachment``.
     """
     try:
-        storage.put_bytes(_object_key(filename), data, content_type or "application/octet-stream")
+        normalized = normalize_audio(data, Path(filename).suffix)
+        storage.put_bytes(_object_key(filename), normalized, content_type or "application/octet-stream")
         DatabaseOperations.add_sound(name, filename)
         SoundCache.invalidate()
     except Exception as e:

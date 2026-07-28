@@ -1,6 +1,6 @@
 import asyncio
 from pathlib import Path
-from discord import Interaction, FFmpegPCMAudio
+from discord import Interaction, FFmpegPCMAudio, PCMVolumeTransformer
 
 from src.services.soundboard import download_sound_file, get_sounds
 from src.core.messaging import send_message
@@ -8,6 +8,11 @@ from src.commands.soundboard.constants import (
     UNAVAILABLE_SOUND_MESSAGE,
     VOICE_STATE_INVALID_MESSAGE,
 )
+
+
+def _build_source(file_path, volume: float) -> PCMVolumeTransformer:
+    """Build the playback source with the sound's stored per-sound volume applied."""
+    return PCMVolumeTransformer(FFmpegPCMAudio(str(file_path)), volume=volume)
 
 
 async def handle_play(interaction: Interaction, sound_name: str) -> None:
@@ -56,8 +61,8 @@ async def handle_play(interaction: Interaction, sound_name: str) -> None:
 
     # Play the sound
     try:
-        source_path = file_path
-        source = FFmpegPCMAudio(source_path)
+        volume = float(sound_entry.get("volume", 1.0))
+        source = _build_source(file_path, volume)
         done = asyncio.Event()
 
         def after_playing(error: Exception = None):
