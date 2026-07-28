@@ -41,6 +41,7 @@ class Config:
 
     # Media downloads
     DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
+    COOKIE_DIR = os.getenv("COOKIE_DIR", "/criwin/cookies")
 
     # Soundboard cache (local filesystem)
     CACHE_DIR = Path("cache")

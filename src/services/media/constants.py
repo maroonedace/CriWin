@@ -1,11 +1,13 @@
 import os
+from pathlib import Path
 
 from src.config import Config
 
 DOWNLOAD_DIR = Config.DOWNLOAD_DIR
+COOKIE_DIR = Config.COOKIE_DIR
 
-YOUTUBE_COOKIE_FILE = "/criwin/cookies/www.youtube.com_cookies.txt"
-INSTAGRAM_COOKIE_FILE = "/criwin/cookies/www.instagram.com_cookies.txt"
+YOUTUBE_COOKIE_FILE = str(Path(COOKIE_DIR) / "www.youtube.com_cookies.txt")
+INSTAGRAM_COOKIE_FILE = str(Path(COOKIE_DIR) / "www.instagram.com_cookies.txt")
 
 COOKIE_MAP = {
     "youtube.com": YOUTUBE_COOKIE_FILE,
