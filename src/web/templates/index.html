@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Criwin Admin</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    h2 { margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #eee; }
+    form.inline { display: inline; }
+    input[type=number] { width: 4.5rem; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Criwin Admin</h1>
+
+  <h2>Add sound</h2>
+  <form action="/sounds" method="post" enctype="multipart/form-data">
+    <input name="name" placeholder="Display name" required>
+    <input type="file" name="file" accept="audio/*" required>
+    <button type="submit">Upload</button>
+  </form>
+
+  <h2>Sounds</h2>
+  <table>
+    <thead><tr><th>Name</th><th>File</th><th>Volume</th><th></th></tr></thead>
+    <tbody>
+    {% for sound in sounds %}
+      <tr>
+        <td>{{ sound.name }}</td>
+        <td>{{ sound.file_name }}</td>
+        <td>
+          <form class="inline" action="/sounds/{{ sound.name | urlencode }}/volume" method="post">
+            <input type="number" name="volume" step="0.1" min="0" max="2" value="{{ sound.volume }}">
+            <button type="submit">Set</button>
+          </form>
+        </td>
+        <td>
+          <form class="inline" action="/sounds/{{ sound.name | urlencode }}/delete" method="post"
+                onsubmit="return confirm('Delete {{ sound.name }}?')">
+            <button type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">No sounds yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Cookies</h2>
+  <p>Stored: {% if cookies %}{{ cookies | join(", ") }}{% else %}none{% endif %}</p>
+  <form action="/cookies" method="post" enctype="multipart/form-data">
+    <input name="name" placeholder="youtube / instagram" required>
+    <input type="file" name="file" accept=".txt" required>
+    <button type="submit">Upload / replace cookie</button>
+  </form>
+</body>
+</html>

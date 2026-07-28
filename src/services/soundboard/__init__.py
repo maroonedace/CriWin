@@ -12,6 +12,7 @@ from src.services.soundboard.service import (
     delete_sound,
     download_sound_file,
     get_sounds,
+    set_volume,
     upload_sound_file,
 )
 
@@ -21,5 +22,6 @@ __all__ = [
     "delete_sound",
     "download_sound_file",
     "get_sounds",
+    "set_volume",
     "upload_sound_file",
 ]
