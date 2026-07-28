@@ -7,12 +7,11 @@ from discord import Interaction, File
 
 from src.commands.download.constants import (
     DOWNLOAD_SENT_TO_CHANNEL_MESSAGE,
-    LARGE_FILE_MESSAGE,
     LIMIT_DOWNLOAD_MESSAGE,
+    large_file_message,
 )
-
+from src.commands.download.limits import get_max_upload_mb
 from src.core.messaging import send_message
-from src.services.media.constants import BOOST_LEVEL_UPLOAD_SIZE, DEFAULT_UPLOAD_LIMIT_MB
 from src.services.media import is_file_too_large, video_downloader
 
 logger = logging.getLogger(__name__)
@@ -43,13 +42,10 @@ async def handle_download_audio(interaction: Interaction, active_downloads: set[
             False 
         )
 
-        if interaction.guild is not None:
-            max_size_mb = BOOST_LEVEL_UPLOAD_SIZE.get(interaction.guild.premium_tier, DEFAULT_UPLOAD_LIMIT_MB)
-        else:
-            max_size_mb = DEFAULT_UPLOAD_LIMIT_MB
+        max_size_mb = get_max_upload_mb(interaction)
 
         if is_file_too_large(str(file_path), max_size_mb):
-            raise ValueError(LARGE_FILE_MESSAGE)
+            raise ValueError(large_file_message(max_size_mb))
         
         discord_file = File(str(file_path))
 
