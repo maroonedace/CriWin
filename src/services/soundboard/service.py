@@ -1,11 +1,16 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-import discord
 from discord import app_commands
 
+from src.config import Config
+from src.services import storage
 from src.services.soundboard.cache import FileOperations, SoundCache
 from src.services.soundboard.repository import DatabaseOperations
-from src.services.soundboard.storage import S3Operations
+
+
+def _object_key(file_name: str) -> str:
+    """Build the object-storage key for a soundboard file."""
+    return f"{Config.SOUNDBOARD_DIR}/{file_name}"
 
 
 def get_sounds() -> List[Dict[str, Any]]:
@@ -13,11 +18,20 @@ def get_sounds() -> List[Dict[str, Any]]:
     return DatabaseOperations.get_all_sounds()
 
 
-async def upload_sound_file(name: str, file: discord.Attachment) -> None:
-    """Upload sound file to object storage and database"""
+async def upload_sound_file(
+    name: str,
+    data: bytes,
+    filename: str,
+    content_type: Optional[str] = None,
+) -> None:
+    """Store sound bytes in object storage and record the sound in the database.
+
+    Framework-agnostic: callers pass raw bytes (a Discord attachment or a web
+    upload), not a ``discord.Attachment``.
+    """
     try:
-        await S3Operations.upload_file(file)
-        DatabaseOperations.add_sound(name, file.filename)
+        storage.put_bytes(_object_key(filename), data, content_type or "application/octet-stream")
+        DatabaseOperations.add_sound(name, filename)
         SoundCache.invalidate()
     except Exception as e:
         raise ValueError(f"Could not upload sound file: {e}")
@@ -26,7 +40,7 @@ async def upload_sound_file(name: str, file: discord.Attachment) -> None:
 async def delete_sound(name: str, file_name: str) -> None:
     """Delete sound from object storage, database, and local cache"""
     try:
-        S3Operations.delete_file(file_name)
+        storage.remove(_object_key(file_name))
         DatabaseOperations.delete_sound(name)
         FileOperations.delete_local_file(file_name)
         SoundCache.invalidate()
@@ -35,8 +49,10 @@ async def delete_sound(name: str, file_name: str) -> None:
 
 
 def download_sound_file(file_name: str) -> None:
-    """Download sound file from object storage to local cache"""
-    S3Operations.download_file(file_name)
+    """Download sound file from object storage to the local cache"""
+    SoundCache.ensure_cache_dir()
+    dest = Config.CACHE_DIR / "sounds" / file_name
+    storage.fget(_object_key(file_name), dest)
 
 
 async def autocomplete_sound_name(current: str) -> List[app_commands.Choice[str]]:
