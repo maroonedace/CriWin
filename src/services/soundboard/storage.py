@@ -19,7 +19,7 @@ def get_minio_client() -> Minio:
                 Config.STORAGE_ENDPOINT,
                 access_key=Config.STORAGE_ACCESS_KEY,
                 secret_key=Config.STORAGE_SECRET_KEY,
-                secure=Config.STORAGE_USE_SSL
+                region=Config.STORAGE_REGION
             )
 
             # Ensure bucket exists

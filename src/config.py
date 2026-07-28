@@ -25,18 +25,16 @@ class Config:
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
     # PostgreSQL database (soundboard metadata)
-    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
     POSTGRES_DB = os.getenv("POSTGRES_DB", "discord_bot")
     POSTGRES_USER = os.getenv("POSTGRES_USER", "discord_bot")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
     # Object storage (S3 / MinIO — soundboard audio)
-    STORAGE_ENDPOINT = os.getenv("STORAGE_ENDPOINT", "localhost:9000")
+    STORAGE_REGION = os.getenv("STORAGE_REGION")
     STORAGE_ACCESS_KEY = os.getenv("STORAGE_ACCESS_KEY")
     STORAGE_SECRET_KEY = os.getenv("STORAGE_SECRET_KEY")
+    STORAGE_ENDPOINT = os.getenv("STORAGE_ENDPOINT")
     STORAGE_BUCKET_NAME = os.getenv("STORAGE_BUCKET_NAME", "soundboard")
-    STORAGE_USE_SSL = os.getenv("STORAGE_USE_SSL", "false").lower() == "true"
 
     # Media downloads
     DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
