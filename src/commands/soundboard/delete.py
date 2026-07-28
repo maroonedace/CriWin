@@ -1,6 +1,6 @@
 from discord import Interaction
 
-from src.commands.soundboard.utils import delete_sound, get_sounds
+from src.services.soundboard import delete_sound, get_sounds
 from src.core.messaging import send_message
 
 UNAVAILABLE_SOUND_MESSAGE = "❌ That sound isn't available."

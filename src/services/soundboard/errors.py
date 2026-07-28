@@ -1,0 +1,10 @@
+class ErrorMessages:
+    DATABASE_CLIENT = "❌ Could not connect to the database client."
+    S3_CLIENT = "❌ Could not connect to the storage client."
+    DATABASE = "Could not connect to database."
+    DOWNLOAD_SOUND = "❌ Could not download sound"
+    NO_SOUNDS = "❌ No sounds available."
+    UPLOAD_S3 = "Could not upload sound file to S3."
+    UPLOAD_DATABASE = "Could not upload sound file to database."
+    DELETE_S3 = "Could not delete sound file from S3 storage."
+    DELETE_DATABASE = "Could not delete sound from database."
