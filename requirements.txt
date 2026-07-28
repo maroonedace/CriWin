@@ -1,4 +1,5 @@
 pytest==9.0.3
+pytest-asyncio==1.4.0
 discord.py[voice]==2.7.1
 yt-dlp[default]==2026.3.17
 davey==0.1.5
