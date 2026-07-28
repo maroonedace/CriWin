@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from discord import Interaction
 import pytest
 
-from src.commands.utils import send_message
+from src.core.messaging import send_message
 
 @pytest.mark.asyncio
 async def test_send_message():

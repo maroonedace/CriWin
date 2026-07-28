@@ -3,7 +3,7 @@ from pathlib import Path
 from discord import Interaction, FFmpegPCMAudio
 
 from src.commands.soundboard.utils import download_sound_file, get_sounds
-from src.commands.utils import send_message
+from src.core.messaging import send_message
 
 VOICE_STATE_INVALID_MESSAGE = "❌ You must be in a voice channel."
 UNAVAILABLE_SOUND_MESSAGE = "❌ That sound isn't available."

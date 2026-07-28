@@ -3,7 +3,7 @@ import discord
 import re
 
 from src.commands.soundboard.utils import get_sounds, upload_sound_file
-from src.commands.utils import send_message
+from src.core.messaging import send_message
 
 # Regular expression for validating sound IDs
 ID_RE = re.compile(r"^[a-zA-Z0-9 _'-]{1,64}$")
