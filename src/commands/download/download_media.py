@@ -31,7 +31,7 @@ def _collect_files(result: Union[Path, list[Path]]) -> list[Path]:
     return [result]
 
 
-async def setup_download_media(
+async def handle_download_media(
     interaction: Interaction,
     active_downloads: set[int],
     url: str,

@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
 from discord import Interaction, User, VoiceState
-from src.commands.soundboard.play import UNAVAILABLE_SOUND_MESSAGE, VOICE_STATE_INVALID_MESSAGE, setup_soundboard_play
+from src.commands.soundboard.play import handle_play
+from src.commands.soundboard.constants import UNAVAILABLE_SOUND_MESSAGE, VOICE_STATE_INVALID_MESSAGE
 
 class TestSoundboard:
     user_id = 123456789
@@ -31,7 +32,7 @@ class TestSoundboard:
         
         with patch('src.commands.soundboard.play.send_message', new_callable=AsyncMock) as mock_send_message:
             # Add user to active downloads
-            await setup_soundboard_play(mock_invalid_interaction, sound_name)
+            await handle_play(mock_invalid_interaction, sound_name)
             
             # Assert that send_message was called with correct arguments
             mock_send_message.assert_called_once_with(
@@ -46,7 +47,7 @@ class TestSoundboard:
             mock_sounds.side_effect = ValueError("Invalid")
             with patch('src.commands.soundboard.play.send_message', new_callable=AsyncMock) as mock_send_message:
                 # Add user to active downloads
-                await setup_soundboard_play(mock_valid_interaction, sound_name)
+                await handle_play(mock_valid_interaction, sound_name)
                 
                 # Assert that send_message was called with correct arguments
                 mock_send_message.assert_called_once_with(
@@ -61,7 +62,7 @@ class TestSoundboard:
             mock_sounds.return_value = []
             with patch('src.commands.soundboard.play.send_message', new_callable=AsyncMock) as mock_send_message:
                 # Add user to active downloads
-                await setup_soundboard_play(mock_valid_interaction, sound_name)
+                await handle_play(mock_valid_interaction, sound_name)
                 
                 # Assert that send_message was called with correct arguments
                 mock_send_message.assert_called_once_with(
