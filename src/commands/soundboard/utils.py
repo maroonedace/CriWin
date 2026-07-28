@@ -11,11 +11,6 @@ import discord
 from dotenv import load_dotenv
 
 
-class Sounds:
-    name: str
-    file_name: str
-
-
 # Setting up to load ENV values
 load_dotenv()
 
@@ -45,8 +40,8 @@ class Config:
 
 
 class ErrorMessages:
-    DATABASE_CLIENT = "❌ Could not connect to Cloudflare database client."
-    S3_CLIENT = "❌ Could not connect to Cloudflare S3 client."
+    DATABASE_CLIENT = "❌ Could not connect to the database client."
+    S3_CLIENT = "❌ Could not connect to the storage client."
     DATABASE = "Could not connect to database."
     DOWNLOAD_SOUND = "❌ Could not download sound"
     NO_SOUNDS = "❌ No sounds available."

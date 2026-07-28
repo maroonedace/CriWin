@@ -25,9 +25,9 @@ def setup_soundboard(tree: app_commands.CommandTree):
         await setup_soundboard_delete(interaction, sound_name)
 
     @soundboard_play.autocomplete("sound_name")
-    async def sound_autocomplete(_interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def play_sound_autocomplete(_interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
         return await autocomplete_sound_name(current)
 
     @soundboard_delete.autocomplete("sound_name")
-    async def sound_autocomplete(_interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def delete_sound_autocomplete(_interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
         return await autocomplete_sound_name(current)
