@@ -53,6 +53,7 @@ class Config:
     SOUNDBOARD_DIR = "soundboard"
 
     # Admin web panel
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
     ADMIN_HOST = os.getenv("ADMIN_HOST", "0.0.0.0")
     ADMIN_PORT = int(os.getenv("ADMIN_PORT", "8080"))

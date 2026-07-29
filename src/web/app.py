@@ -23,10 +23,25 @@ security = HTTPBasic()
 
 
 def require_auth(credentials: HTTPBasicCredentials = Depends(security)) -> None:
-    """Validate the admin password (constant-time). Rejects if unset."""
+    """Validate the admin username + password (constant-time).
+
+    Both are read from the environment (``ADMIN_USERNAME`` / ``ADMIN_PASSWORD``) and
+    must be set and match. Comparisons are done on UTF-8 bytes so non-ASCII input can
+    never raise (``secrets.compare_digest`` rejects non-ASCII ``str``), and both fields
+    are always compared to keep the check constant-time and avoid leaking which was
+    wrong. A mismatch returns 401 (re-prompting the browser), never a 500.
+    """
+    username = Config.ADMIN_USERNAME
     password = Config.ADMIN_PASSWORD
-    authorized = bool(password) and secrets.compare_digest(credentials.password, password)
-    if not authorized:
+
+    user_ok = secrets.compare_digest(
+        credentials.username.encode("utf-8"), (username or "").encode("utf-8")
+    )
+    pass_ok = secrets.compare_digest(
+        credentials.password.encode("utf-8"), (password or "").encode("utf-8")
+    )
+
+    if not (username and password and user_ok and pass_ok):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized",

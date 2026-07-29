@@ -10,7 +10,8 @@ AUTH = ("admin", "secret")
 
 
 @pytest.fixture(autouse=True)
-def _set_admin_password(monkeypatch):
+def _set_admin_credentials(monkeypatch):
+    monkeypatch.setattr(Config, "ADMIN_USERNAME", "admin")
     monkeypatch.setattr(Config, "ADMIN_PASSWORD", "secret")
 
 
@@ -25,6 +26,23 @@ def test_index_requires_auth(client):
 
 def test_wrong_password_rejected(client):
     assert client.get("/", auth=("admin", "wrong")).status_code == 401
+
+
+def test_wrong_username_rejected(client):
+    assert client.get("/", auth=("nope", "secret")).status_code == 401
+
+
+def test_non_ascii_credentials_rejected_not_500(client):
+    # Regression: secrets.compare_digest raises TypeError on non-ASCII str, which
+    # used to surface as a 500 and stop the browser from re-prompting.
+    assert client.get("/", auth=("admin", "pÃ¡sswörd")).status_code == 401
+
+
+def test_unset_credentials_reject_everything(client, monkeypatch):
+    monkeypatch.setattr(Config, "ADMIN_USERNAME", None)
+    monkeypatch.setattr(Config, "ADMIN_PASSWORD", None)
+    # Empty credentials must not authenticate when nothing is configured.
+    assert client.get("/", auth=("", "")).status_code == 401
 
 
 def test_index_lists_sounds_and_cookies(client):

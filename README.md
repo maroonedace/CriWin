@@ -105,7 +105,7 @@ the values:
 - **Database** — `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 - **Object storage** — `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_SECURE`
 - **Media downloads** — `DOWNLOAD_DIR`, `COOKIE_DIR`
-- **Admin panel** — `ADMIN_PASSWORD`, `ADMIN_HOST`, `ADMIN_PORT`
+- **Admin panel** — `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_HOST`, `ADMIN_PORT`
 
 ## Running
 
@@ -161,7 +161,8 @@ Tailscale tunnel — e.g. from your machine:
 ssh -L 8080:localhost:8080 your-server
 ```
 
-then open `http://localhost:8080` and sign in with `ADMIN_PASSWORD`. From there
+then open `http://localhost:8080` and sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`
+(both are required — the panel returns 401 until they match). From there
 you can upload/delete sounds, set per-sound volume, and upload/replace the
 yt-dlp/gallery-dl cookies.
 
