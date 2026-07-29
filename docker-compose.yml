@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - /mnt/data/postgres:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
@@ -21,11 +21,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     volumes:
-      - /mnt/data/minio:/data
+      - storage_data:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -47,6 +44,7 @@ services:
     environment:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       GUILD_ID: ${GUILD_ID}
+      LOG_LEVEL: ${LOG_LEVEL}
 
       # Database Configuration
       DB_HOST: ${DB_HOST}
@@ -68,10 +66,8 @@ services:
         max-size: "10m"
         max-file: "3"
     volumes:
-      - ./src:/criwin/src
-      - ./main.py:/criwin/main.py
-      - ./cache:/criwin/cache
-      - ./cookies:/criwin/cookies
+      - criwin_cache:/criwin/cache
+      - criwin_cookies:/criwin/cookies
 
   admin:
     image: criwin
@@ -83,6 +79,8 @@ services:
         condition: service_healthy
     command: ["python", "-m", "src.web"]
     environment:
+      LOG_LEVEL: ${LOG_LEVEL}
+
       # Database Configuration
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
@@ -98,8 +96,13 @@ services:
       STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
       STORAGE_SECURE: ${STORAGE_SECURE}
 
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:-8080:8080"
-    volumes:
-      - ./src:/criwin/src
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  db_data:
+  storage_data:
+  criwin_cache:
+  criwin_cookies:

@@ -105,16 +105,51 @@ the values:
 - **Database** — `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 - **Object storage** — `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_SECURE`
 - **Media downloads** — `DOWNLOAD_DIR`, `COOKIE_DIR`
-- **Admin panel** — `ADMIN_PASSWORD`, `ADMIN_HOST`, `ADMIN_PORT`
+- **Admin panel** — `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_HOST`, `ADMIN_PORT`
 
 ## Running
 
 ### With Docker
 
-`docker compose up` starts four services: `db` (PostgreSQL), `storage` (MinIO),
-`app` (the bot), and `admin` (the web panel). The database schema is bootstrapped
-from `init.sql`. Inside the compose network the app addresses the database at
-`db:5432` and object storage at `storage:9000`.
+Compose starts four services: `db` (PostgreSQL), `storage` (MinIO), `app` (the bot),
+and `admin` (the web panel). The database schema is bootstrapped from `init.sql`. All
+configuration comes from the env file — the compose files only pass `${VARS}` through. So
+for Docker your env file must point the app at the compose service names: set
+`DB_HOST=db` and `STORAGE_ENDPOINT=storage:9000` (the `localhost` values in
+`.env.example` are for non-Docker `python main.py` runs).
+
+Configuration is split across three files so the same stack runs for local development
+and on the production server:
+
+- `docker-compose.yml` — shared base (prod-safe defaults; code baked into the image).
+- `docker-compose.override.yml` — development only; **auto-loaded** by `docker compose up`.
+  Bind-mounts `./src` and `./main.py` for live editing and exposes the DB / MinIO ports on
+  loopback for debugging.
+- `docker-compose.prod.yml` — production tuning; loaded **explicitly** with `-f`, which
+  skips the dev override so source mounts never reach production.
+
+**Development (macOS / Windows / Linux):**
+
+```bash
+docker compose up -d --build
+```
+
+Edit code, then `docker compose restart app admin` to pick up the change.
+
+**Production (Debian server)** — put production values in `.env.prod`, then:
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+Here the bot runs the code baked into the image (no source mounts); persistent state lives
+in the `db_data` and `storage_data` volumes, and only the loopback admin port is published.
+
+**Makefile shortcuts** — a [`Makefile`](Makefile) wraps these commands; run `make help` for
+the full list. Common ones: `make up` / `make down` / `make logs` / `make restart` (dev),
+and `make prod-up` / `make prod-down` / `make prod-logs` (prod). Point prod at a different
+env file with `make prod-up PROD_ENV=.env.staging`. (On Windows, run `make` from WSL or Git
+Bash, or use the `docker compose` commands above directly.)
 
 ### Admin panel
 
@@ -126,7 +161,8 @@ Tailscale tunnel — e.g. from your machine:
 ssh -L 8080:localhost:8080 your-server
 ```
 
-then open `http://localhost:8080` and sign in with `ADMIN_PASSWORD`. From there
+then open `http://localhost:8080` and sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD`
+(both are required — the panel returns 401 until they match). From there
 you can upload/delete sounds, set per-sound volume, and upload/replace the
 yt-dlp/gallery-dl cookies.
 

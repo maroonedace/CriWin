@@ -1,1 +1,11 @@
+# Keep the build context small — the Dockerfile only needs requirements.txt, src/, main.py.
+.git/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+downloads/
+cache/
 cookies/
+tests/
+*.md
