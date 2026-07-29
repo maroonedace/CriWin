@@ -1,5 +1,5 @@
-DOWNLOAD_SENT_TO_CHANNEL_MESSAGE = 'Download sent to channel!'
-LIMIT_DOWNLOAD_MESSAGE = '⚠️ You already have a download in progress.'
+DOWNLOAD_SENT_TO_CHANNEL_MESSAGE = "Download sent to channel!"
+LIMIT_DOWNLOAD_MESSAGE = "⚠️ You already have a download in progress."
 
 
 def large_file_message(max_size_mb: int) -> str:

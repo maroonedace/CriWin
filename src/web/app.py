@@ -7,7 +7,6 @@ tunnel — run a single worker (the DB/storage clients are module-level singleto
 
 import secrets
 from pathlib import Path
-from typing import Optional
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
@@ -35,7 +34,7 @@ def require_auth(credentials: HTTPBasicCredentials = Depends(security)) -> None:
         )
 
 
-def _find_file_name(name: str) -> Optional[str]:
+def _find_file_name(name: str) -> str | None:
     for sound in get_sounds():
         if sound["name"] == name:
             return sound["file_name"]
@@ -65,7 +64,7 @@ async def create_sound(
     try:
         await upload_sound_file(name, data, file.filename, file.content_type)
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error))
+        raise HTTPException(status_code=400, detail=str(error)) from error
     return _redirect_home()
 
 
@@ -77,7 +76,7 @@ async def remove_sound(name: str, _: None = Depends(require_auth)):
     try:
         await delete_sound(name, file_name)
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error))
+        raise HTTPException(status_code=400, detail=str(error)) from error
     return _redirect_home()
 
 

@@ -71,8 +71,10 @@ class TestDatabaseOperations:
         conn, cursor = self._conn_with_cursor()
         cursor.fetchall.return_value = [{"name": "a", "file_name": "a.mp3", "volume": 1.0}]
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn), \
-             patch.object(repo.SoundCache, "save"):
+        with (
+            patch("src.services.soundboard.repository.get_database_connection", return_value=conn),
+            patch.object(repo.SoundCache, "save"),
+        ):
             result = repo.DatabaseOperations.get_all_sounds()
 
         assert "volume" in cursor.execute.call_args.args[0]

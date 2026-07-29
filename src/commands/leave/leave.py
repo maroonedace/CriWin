@@ -1,7 +1,7 @@
 from discord import Interaction
 
-from src.core.messaging import send_message
 from src.commands.leave.constants import BOT_NOT_CONNECTED, NOT_IN_VOICE_CHANNEL
+from src.core.messaging import send_message
 
 
 async def handle_leave(interaction: Interaction):

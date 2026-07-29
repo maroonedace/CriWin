@@ -28,8 +28,14 @@ def test_wrong_password_rejected(client):
 
 
 def test_index_lists_sounds_and_cookies(client):
-    with patch.object(webapp, "get_sounds", return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}]), \
-         patch.object(webapp, "list_cookies", return_value=["youtube"]):
+    with (
+        patch.object(
+            webapp,
+            "get_sounds",
+            return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}],
+        ),
+        patch.object(webapp, "list_cookies", return_value=["youtube"]),
+    ):
         response = client.get("/", auth=AUTH)
 
     assert response.status_code == 200
@@ -52,8 +58,14 @@ def test_upload_sound_calls_service(client):
 
 
 def test_delete_sound_resolves_file_name(client):
-    with patch.object(webapp, "get_sounds", return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}]), \
-         patch.object(webapp, "delete_sound", new_callable=AsyncMock) as delete:
+    with (
+        patch.object(
+            webapp,
+            "get_sounds",
+            return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}],
+        ),
+        patch.object(webapp, "delete_sound", new_callable=AsyncMock) as delete,
+    ):
         response = client.post("/sounds/Boom/delete", auth=AUTH, follow_redirects=False)
 
     assert response.status_code == 303
@@ -61,8 +73,10 @@ def test_delete_sound_resolves_file_name(client):
 
 
 def test_delete_unknown_sound_404(client):
-    with patch.object(webapp, "get_sounds", return_value=[]), \
-         patch.object(webapp, "delete_sound", new_callable=AsyncMock) as delete:
+    with (
+        patch.object(webapp, "get_sounds", return_value=[]),
+        patch.object(webapp, "delete_sound", new_callable=AsyncMock) as delete,
+    ):
         response = client.post("/sounds/Ghost/delete", auth=AUTH, follow_redirects=False)
 
     assert response.status_code == 404

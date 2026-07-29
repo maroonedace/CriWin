@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 from src.config import Config
 
@@ -19,14 +19,14 @@ class SoundCache:
             return False
 
         try:
-            with open(Config.CACHE_TIMESTAMP_FILE, "r") as f:
+            with open(Config.CACHE_TIMESTAMP_FILE) as f:
                 timestamp = float(f.read().strip())
             return (time.time() - timestamp) < Config.CACHE_EXPIRY_SECONDS
-        except (ValueError, IOError):
+        except (OSError, ValueError):
             return False
 
     @staticmethod
-    def save(sounds_data: List[Dict[str, Any]]):
+    def save(sounds_data: list[dict[str, Any]]):
         """Save sounds data to cache"""
         SoundCache.ensure_cache_dir()
 
@@ -37,15 +37,15 @@ class SoundCache:
             f.write(str(time.time()))
 
     @staticmethod
-    def load() -> List[Dict[str, Any]]:
+    def load() -> list[dict[str, Any]]:
         """Load sounds data from cache"""
         if not Config.CACHE_FILE.exists():
             return []
 
         try:
-            with open(Config.CACHE_FILE, "r") as f:
+            with open(Config.CACHE_FILE) as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             return []
 
     @staticmethod
