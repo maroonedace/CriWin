@@ -52,8 +52,11 @@ jobs:
         run: |
           python -m pytest -v \
             --cov=src --cov-report=term-missing \
-            --junitxml=junit.xml \
-            --md-report --md-report-output="$GITHUB_STEP_SUMMARY"
+            --junitxml=junit.xml
+
+      - name: Publish test report
+        if: always()
+        run: python .github/scripts/junit_summary.py junit.xml >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload test results
         if: always()
