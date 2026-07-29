@@ -24,14 +24,14 @@ class Config:
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-    # PostgreSQL database (soundboard metadata)
-    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-    POSTGRES_DB = os.getenv("POSTGRES_DB", "discord_bot")
-    POSTGRES_USER = os.getenv("POSTGRES_USER", "discord_bot")
-    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+    # Database (PostgreSQL)
+    DB_HOST = os.getenv("DB_HOST")
+    DB_PORT = int(os.getenv("DB_PORT"))
+    DB_NAME = os.getenv("DB_NAME")
+    DB_USER = os.getenv("DB_USER")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
 
-    # Object storage (S3 / MinIO — soundboard audio)
+    # Object storage (S3)
     STORAGE_REGION = os.getenv("STORAGE_REGION")
     STORAGE_ACCESS_KEY = os.getenv("STORAGE_ACCESS_KEY")
     STORAGE_SECRET_KEY = os.getenv("STORAGE_SECRET_KEY")

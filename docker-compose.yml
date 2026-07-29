@@ -6,7 +6,6 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    
     volumes:
       - /mnt/data/postgres:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -20,7 +19,7 @@ services:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY} 
+      MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY}
     ports:
       - "9000:9000"
@@ -38,6 +37,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: criwin
     restart: unless-stopped
     depends_on:
       db:
@@ -45,22 +45,23 @@ services:
       storage:
         condition: service_healthy
     environment:
-      # Discord Configuration
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       GUILD_ID: ${GUILD_ID}
-      
-      # PostgreSQL Configuration
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      
-      # Object storage (S3) Configuration
+
+      # Database Configuration
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # Storage Configuration
       STORAGE_REGION: ${STORAGE_REGION}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
-    
+      STORAGE_SECURE: ${STORAGE_SECURE}
     logging:
       driver: json-file
       options:
@@ -71,3 +72,34 @@ services:
       - ./main.py:/criwin/main.py
       - ./cache:/criwin/cache
       - ./cookies:/criwin/cookies
+
+  admin:
+    image: criwin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+    command: ["python", "-m", "src.web"]
+    environment:
+      # Database Configuration
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      # Storage Configuration
+      STORAGE_REGION: ${STORAGE_REGION}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
+      STORAGE_SECURE: ${STORAGE_SECURE}
+
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:-8080:8080"
+    volumes:
+      - ./src:/criwin/src

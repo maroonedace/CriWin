@@ -3,6 +3,7 @@ A Discord bot that lets users download short form videos and play audio on deman
 
 ## Tech Stack
 ![Python](https://shields.io/badge/Python-3776AB?logo=Python&logoColor=FFF)
+![FastAPI](https://shields.io/badge/FastAPI-009485?logo=fastapi&logoColor=FFF)
 ![Postgres](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-257BD6?logo=docker&logoColor=white)
 ![MinIO](https://img.shields.io/badge/MinIO-C72E29?&logo=minio&logoColor=white)
@@ -101,16 +102,33 @@ the values:
 
 - **Discord** — `DISCORD_TOKEN`, `GUILD_ID`
 - **Logging** — `LOG_LEVEL`
-- **PostgreSQL** — `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
-- **Object storage (S3 / MinIO)** — `STORAGE_ENDPOINT`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_USE_SSL`
-- **Media downloads** — `DOWNLOAD_DIR`
+- **Database** — `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- **Object storage** — `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_SECURE`
+- **Media downloads** — `DOWNLOAD_DIR`, `COOKIE_DIR`
+- **Admin panel** — `ADMIN_PASSWORD`, `ADMIN_HOST`, `ADMIN_PORT`
 
 ## Running
 
 ### With Docker
 
-`docker compose up` starts three services: `db` (PostgreSQL), `storage` (MinIO),
-and `app` (the bot). The database schema is bootstrapped from `init.sql`.
+`docker compose up` starts four services: `db` (PostgreSQL), `storage` (MinIO),
+`app` (the bot), and `admin` (the web panel). The database schema is bootstrapped
+from `init.sql`. Inside the compose network the app addresses the database at
+`db:5432` and object storage at `storage:9000`.
+
+### Admin panel
+
+The `admin` service publishes only to the host loopback
+(`127.0.0.1:${ADMIN_PORT}`), so there is no public port. Reach it over an SSH or
+Tailscale tunnel — e.g. from your machine:
+
+```bash
+ssh -L 8080:localhost:8080 your-server
+```
+
+then open `http://localhost:8080` and sign in with `ADMIN_PASSWORD`. From there
+you can upload/delete sounds, set per-sound volume, and upload/replace the
+yt-dlp/gallery-dl cookies.
 
 ### Locally
 
