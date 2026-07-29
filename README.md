@@ -3,6 +3,7 @@ A Discord bot that lets users download short form videos and play audio on deman
 
 ## Tech Stack
 ![Python](https://shields.io/badge/Python-3776AB?logo=Python&logoColor=FFF)
+![FastAPI](https://shields.io/badge/FastAPI-009485?logo=fastapi&logoColor=FFF)
 ![Postgres](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-257BD6?logo=docker&logoColor=white)
 ![MinIO](https://img.shields.io/badge/MinIO-C72E29?&logo=minio&logoColor=white)
@@ -102,7 +103,7 @@ the values:
 - **Discord** — `DISCORD_TOKEN`, `GUILD_ID`
 - **Logging** — `LOG_LEVEL`
 - **Database** — `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-- **Object storage (S3 / MinIO)** — `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_SECURE`
+- **Object storage** — `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET_NAME`, `STORAGE_SECURE`
 - **Media downloads** — `DOWNLOAD_DIR`, `COOKIE_DIR`
 - **Admin panel** — `ADMIN_PASSWORD`, `ADMIN_HOST`, `ADMIN_PORT`
 
