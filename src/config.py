@@ -24,12 +24,12 @@ class Config:
     # Logging
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-    # PostgreSQL database (soundboard metadata)
-    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-    POSTGRES_DB = os.getenv("POSTGRES_DB", "discord_bot")
-    POSTGRES_USER = os.getenv("POSTGRES_USER", "discord_bot")
-    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+    # Database (soundboard metadata)
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = int(os.getenv("DB_PORT", "5432"))
+    DB_NAME = os.getenv("DB_NAME", "discord_bot")
+    DB_USER = os.getenv("DB_USER", "discord_bot")
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
 
     # Object storage (S3 / MinIO — soundboard audio)
     STORAGE_REGION = os.getenv("STORAGE_REGION")
@@ -40,8 +40,8 @@ class Config:
     STORAGE_SECURE = os.getenv("STORAGE_SECURE", "false").lower() == "true"
 
     # Media downloads
-    DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
-    COOKIE_DIR = os.getenv("COOKIE_DIR", "/criwin/cookies")
+    DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/discord_bot/downloads")
+    COOKIE_DIR = os.getenv("COOKIE_DIR", "/discord_bot/cookies")
 
     # Soundboard cache (local filesystem)
     CACHE_DIR = Path("cache")

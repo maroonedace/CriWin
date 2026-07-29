@@ -30,7 +30,7 @@ class TestValidateConfig:
 
 class TestConfigTypes:
     def test_postgres_port_is_int(self):
-        assert isinstance(Config.POSTGRES_PORT, int)
+        assert isinstance(Config.DB_PORT, int)
 
     def test_storage_secure_is_bool(self):
         assert isinstance(Config.STORAGE_SECURE, bool)

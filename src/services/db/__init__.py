@@ -17,11 +17,11 @@ def get_database_connection():
     if _connection is None or _connection.closed:
         try:
             _connection = psycopg2.connect(
-                host=Config.POSTGRES_HOST,
-                port=Config.POSTGRES_PORT,
-                database=Config.POSTGRES_DB,
-                user=Config.POSTGRES_USER,
-                password=Config.POSTGRES_PASSWORD,
+                host=Config.DB_HOST,
+                port=Config.DB_PORT,
+                database=Config.DB_NAME,
+                user=Config.DB_USER,
+                password=Config.DB_PASSWORD,
                 connect_timeout=10,
             )
         except Exception as e:

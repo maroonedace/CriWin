@@ -26,11 +26,11 @@ def test_get_database_connection_passes_config():
 
     assert conn is fake_conn
     mock_connect.assert_called_once_with(
-        host=Config.POSTGRES_HOST,
-        port=Config.POSTGRES_PORT,
-        database=Config.POSTGRES_DB,
-        user=Config.POSTGRES_USER,
-        password=Config.POSTGRES_PASSWORD,
+        host=Config.DB_HOST,
+        port=Config.DB_PORT,
+        database=Config.DB_NAME,
+        user=Config.DB_USER,
+        password=Config.DB_PASSWORD,
         connect_timeout=10,
     )
 
