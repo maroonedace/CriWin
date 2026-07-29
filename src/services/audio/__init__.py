@@ -32,8 +32,12 @@ def normalize_audio(data: bytes, suffix: str = ".mp3", target_lufs: float = TARG
         try:
             result = subprocess.run(
                 [
-                    "ffmpeg", "-y", "-i", str(src),
-                    "-af", f"loudnorm=I={target_lufs}:TP=-1.5:LRA=11",
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    str(src),
+                    "-af",
+                    f"loudnorm=I={target_lufs}:TP=-1.5:LRA=11",
                     str(dst),
                 ],
                 capture_output=True,

@@ -25,5 +25,5 @@ def get_database_connection():
                 connect_timeout=10,
             )
         except Exception as e:
-            raise ValueError(f"Could not connect to the database: {e}")
+            raise ValueError(f"Could not connect to the database: {e}") from e
     return _connection

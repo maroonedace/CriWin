@@ -1,25 +1,24 @@
-import os
 import logging
+import os
 import subprocess
 from pathlib import Path
-from typing import Union
 from urllib.parse import urlparse
 
+from gallery_dl import config, job
 from PIL import Image
 from yt_dlp import YoutubeDL
-from gallery_dl import config, job
 
 from src.services import cookies
 from src.services.media.constants import (
     COOKIE_DOMAINS,
+    DOWNLOAD_DIR,
     LIVE_STREAM_MESSAGE,
-    URL_INVALID_MESSAGE,
     UNSUPPORTED_URL_MESSAGE,
+    URL_INVALID_MESSAGE,
+    VIDEO_EXTENSIONS,
     YTDL_AUDIO,
     YTDL_META,
     YTDL_VIDEO,
-    VIDEO_EXTENSIONS,
-    DOWNLOAD_DIR,
 )
 
 logger = logging.getLogger(__name__)
@@ -48,6 +47,7 @@ def get_cookie_file(url: str) -> str | None:
     path = cookies.fetch_to_cache(name)
     return str(path) if path else None
 
+
 def is_instagram_url(url: str) -> bool:
     """Check if the URL is from Instagram."""
     hostname = urlparse(url).hostname or ""
@@ -75,9 +75,13 @@ def convert_to_mp4(file_path: Path) -> Path:
     # Probe the source codecs
     probe = subprocess.run(
         [
-            "ffprobe", "-v", "quiet",
-            "-show_entries", "stream=codec_name",
-            "-of", "csv=p=0",
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-show_entries",
+            "stream=codec_name",
+            "-of",
+            "csv=p=0",
             str(file_path),
         ],
         capture_output=True,
@@ -89,22 +93,40 @@ def convert_to_mp4(file_path: Path) -> Path:
 
     if copy_safe and file_path.suffix.lower() == ".mp4":
         return file_path
-    
+
     mp4_path = file_path.with_name(f"{file_path.stem}_converted.mp4")
 
     if copy_safe:
         cmd = [
-            "ffmpeg", "-i", str(file_path),
-            "-c", "copy", "-movflags", "+faststart",
-            "-y", str(mp4_path),
+            "ffmpeg",
+            "-i",
+            str(file_path),
+            "-c",
+            "copy",
+            "-movflags",
+            "+faststart",
+            "-y",
+            str(mp4_path),
         ]
     else:
         cmd = [
-            "ffmpeg", "-i", str(file_path),
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
-            "-c:a", "aac", "-b:a", "128k",
-            "-movflags", "+faststart",
-            "-y", str(mp4_path),
+            "ffmpeg",
+            "-i",
+            str(file_path),
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "28",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-movflags",
+            "+faststart",
+            "-y",
+            str(mp4_path),
         ]
 
     result = subprocess.run(cmd, capture_output=True)
@@ -170,7 +192,7 @@ def video_downloader(url: str, is_video_download: bool) -> Path:
         raise ValueError(URL_INVALID_MESSAGE) from error
 
 
-def gallery_downloader(url: str) -> Union[list[Path], Path]:
+def gallery_downloader(url: str) -> list[Path] | Path:
     """Download media from Instagram using gallery-dl. Returns a single Path for
     videos or a list of Paths for images."""
     download_path = Path(DOWNLOAD_DIR).resolve()
@@ -206,7 +228,7 @@ def gallery_downloader(url: str) -> Union[list[Path], Path]:
     converted_videos = []
     for video in videos:
         converted_videos.append(convert_to_mp4(video))
-    
+
     # Convert all images to PNG
     converted_images = []
     for file_path in images:
@@ -220,7 +242,7 @@ def gallery_downloader(url: str) -> Union[list[Path], Path]:
             file_path.unlink()
         else:
             converted_images.append(file_path)
-        
+
     all_files = converted_videos + converted_images
 
     # Return single video or list of files

@@ -1,0 +1,6 @@
+# Development / CI tooling. Kept separate from requirements.txt so the Docker
+# production image (which installs requirements.txt) stays lean.
+-r requirements.txt
+
+ruff==0.9.10
+pytest-cov==6.3.0
