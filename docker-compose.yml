@@ -48,12 +48,14 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       GUILD_ID: ${GUILD_ID}
 
+      # Database Configuration
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
 
+      # Storage Configuration
       STORAGE_REGION: ${STORAGE_REGION}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
@@ -81,18 +83,20 @@ services:
         condition: service_healthy
     command: ["python", "-m", "src.web"]
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
+      # Database Configuration
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
 
+      # Storage Configuration
       STORAGE_REGION: ${STORAGE_REGION}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_ENDPOINT: storage:9000
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
-      STORAGE_SECURE: "false"
+      STORAGE_SECURE: ${STORAGE_SECURE}
 
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
