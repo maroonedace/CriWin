@@ -111,10 +111,45 @@ the values:
 
 ### With Docker
 
-`docker compose up` starts four services: `db` (PostgreSQL), `storage` (MinIO),
-`app` (the bot), and `admin` (the web panel). The database schema is bootstrapped
-from `init.sql`. Inside the compose network the app addresses the database at
-`db:5432` and object storage at `storage:9000`.
+Compose starts four services: `db` (PostgreSQL), `storage` (MinIO), `app` (the bot),
+and `admin` (the web panel). The database schema is bootstrapped from `init.sql`. All
+configuration comes from the env file — the compose files only pass `${VARS}` through. So
+for Docker your env file must point the app at the compose service names: set
+`DB_HOST=db` and `STORAGE_ENDPOINT=storage:9000` (the `localhost` values in
+`.env.example` are for non-Docker `python main.py` runs).
+
+Configuration is split across three files so the same stack runs for local development
+and on the production server:
+
+- `docker-compose.yml` — shared base (prod-safe defaults; code baked into the image).
+- `docker-compose.override.yml` — development only; **auto-loaded** by `docker compose up`.
+  Bind-mounts `./src` and `./main.py` for live editing and exposes the DB / MinIO ports on
+  loopback for debugging.
+- `docker-compose.prod.yml` — production tuning; loaded **explicitly** with `-f`, which
+  skips the dev override so source mounts never reach production.
+
+**Development (macOS / Windows / Linux):**
+
+```bash
+docker compose up -d --build
+```
+
+Edit code, then `docker compose restart app admin` to pick up the change.
+
+**Production (Debian server)** — put production values in `.env.prod`, then:
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+```
+
+Here the bot runs the code baked into the image (no source mounts); persistent state lives
+in the `db_data` and `storage_data` volumes, and only the loopback admin port is published.
+
+**Makefile shortcuts** — a [`Makefile`](Makefile) wraps these commands; run `make help` for
+the full list. Common ones: `make up` / `make down` / `make logs` / `make restart` (dev),
+and `make prod-up` / `make prod-down` / `make prod-logs` (prod). Point prod at a different
+env file with `make prod-up PROD_ENV=.env.staging`. (On Windows, run `make` from WSL or Git
+Bash, or use the `docker compose` commands above directly.)
 
 ### Admin panel
 
