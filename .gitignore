@@ -8,6 +8,13 @@ downloads/
 .pytest_cache/
 cache
 
+# Test / coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+junit.xml
+.ruff_cache/
+
 # Virtual environment
 .venv/
 

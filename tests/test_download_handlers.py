@@ -43,8 +43,10 @@ def interaction():
 @pytest.mark.asyncio
 async def test_second_concurrent_download_is_blocked(interaction):
     active_downloads = {42}  # user already downloading
-    with patch.object(audio_mod, "send_message", new_callable=AsyncMock) as send, \
-         patch.object(audio_mod, "video_downloader") as downloader:
+    with (
+        patch.object(audio_mod, "send_message", new_callable=AsyncMock) as send,
+        patch.object(audio_mod, "video_downloader") as downloader,
+    ):
         await audio_mod.handle_download_audio(interaction, active_downloads, "http://x", False)
 
     send.assert_awaited_once_with(interaction, LIMIT_DOWNLOAD_MESSAGE)
@@ -57,9 +59,11 @@ async def test_oversized_file_is_rejected_with_actual_cap(interaction, tmp_path)
     downloaded = tmp_path / "out.mp3"
     downloaded.write_bytes(b"x")
 
-    with patch.object(audio_mod, "video_downloader", return_value=downloaded), \
-         patch.object(audio_mod, "is_file_too_large", return_value=True), \
-         patch.object(audio_mod, "send_message", new_callable=AsyncMock) as send:
+    with (
+        patch.object(audio_mod, "video_downloader", return_value=downloaded),
+        patch.object(audio_mod, "is_file_too_large", return_value=True),
+        patch.object(audio_mod, "send_message", new_callable=AsyncMock) as send,
+    ):
         await audio_mod.handle_download_audio(interaction, active_downloads, "http://x", False)
 
     send.assert_awaited_once_with(interaction, large_file_message(10))

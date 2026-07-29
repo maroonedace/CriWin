@@ -48,15 +48,20 @@ YTDL_AUDIO = {
 }
 
 YTDL_VIDEO = {
-    "format": "(bestvideo[vcodec^=avc1][height<=480]+bestaudio[acodec^=mp4a])/best[vcodec^=avc1][height<=480]/best",
+    "format": (
+        "(bestvideo[vcodec^=avc1][height<=480]+bestaudio[acodec^=mp4a])"
+        "/best[vcodec^=avc1][height<=480]/best"
+    ),
     "merge_output_format": "mp4",
     "outtmpl": os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s"),
     "quiet": True,
     "noplaylist": True,
-    "postprocessors": [{
-        "key": "FFmpegVideoConvertor",
-        "preferedformat": "mp4",
-    }],
+    "postprocessors": [
+        {
+            "key": "FFmpegVideoConvertor",
+            "preferedformat": "mp4",
+        }
+    ],
     "writethumbnail": False,
     "embedmetadata": True,
 }

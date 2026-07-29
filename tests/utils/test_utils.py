@@ -1,8 +1,10 @@
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-from discord import Interaction
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
+from discord import Interaction
 
 from src.core.messaging import send_message
+
 
 @pytest.mark.asyncio
 async def test_send_message():

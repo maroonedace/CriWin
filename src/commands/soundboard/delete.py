@@ -1,8 +1,8 @@
 from discord import Interaction
 
-from src.services.soundboard import delete_sound, get_sounds
-from src.core.messaging import send_message
 from src.commands.soundboard.constants import UNAVAILABLE_SOUND_MESSAGE
+from src.core.messaging import send_message
+from src.services.soundboard import delete_sound, get_sounds
 
 
 async def handle_delete(interaction: Interaction, sound_name: str) -> None:
@@ -29,7 +29,4 @@ async def handle_delete(interaction: Interaction, sound_name: str) -> None:
         await send_message(interaction, str(err))
         return
 
-    await send_message(
-        interaction,
-        f"✅ Deleted **{sound_name}** from the soundboard."
-    )
+    await send_message(interaction, f"✅ Deleted **{sound_name}** from the soundboard.")

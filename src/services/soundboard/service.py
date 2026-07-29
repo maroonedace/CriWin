@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from discord import app_commands
 
@@ -15,7 +15,7 @@ def _object_key(file_name: str) -> str:
     return f"{Config.SOUNDBOARD_DIR}/{file_name}"
 
 
-def get_sounds() -> List[Dict[str, Any]]:
+def get_sounds() -> list[dict[str, Any]]:
     """Get all sounds (cached or from database)"""
     return DatabaseOperations.get_all_sounds()
 
@@ -24,7 +24,7 @@ async def upload_sound_file(
     name: str,
     data: bytes,
     filename: str,
-    content_type: Optional[str] = None,
+    content_type: str | None = None,
 ) -> None:
     """Store sound bytes in object storage and record the sound in the database.
 
@@ -33,11 +33,13 @@ async def upload_sound_file(
     """
     try:
         normalized = normalize_audio(data, Path(filename).suffix)
-        storage.put_bytes(_object_key(filename), normalized, content_type or "application/octet-stream")
+        storage.put_bytes(
+            _object_key(filename), normalized, content_type or "application/octet-stream"
+        )
         DatabaseOperations.add_sound(name, filename)
         SoundCache.invalidate()
     except Exception as e:
-        raise ValueError(f"Could not upload sound file: {e}")
+        raise ValueError(f"Could not upload sound file: {e}") from e
 
 
 async def delete_sound(name: str, file_name: str) -> None:
@@ -48,7 +50,7 @@ async def delete_sound(name: str, file_name: str) -> None:
         FileOperations.delete_local_file(file_name)
         SoundCache.invalidate()
     except Exception as e:
-        raise ValueError(f"Could not delete sound file: {e}")
+        raise ValueError(f"Could not delete sound file: {e}") from e
 
 
 def set_volume(name: str, volume: float) -> None:
@@ -64,13 +66,11 @@ def download_sound_file(file_name: str) -> None:
     storage.fget(_object_key(file_name), dest)
 
 
-async def autocomplete_sound_name(current: str) -> List[app_commands.Choice[str]]:
+async def autocomplete_sound_name(current: str) -> list[app_commands.Choice[str]]:
     """Generate autocomplete choices for sound names"""
     try:
         sounds = get_sounds()
-        filtered_sounds = [
-            sound for sound in sounds if current.lower() in sound["name"].lower()
-        ]
+        filtered_sounds = [sound for sound in sounds if current.lower() in sound["name"].lower()]
         return [
             app_commands.Choice(name=sound["name"], value=sound["name"])
             for sound in filtered_sounds[:25]  # Discord limit

@@ -1,10 +1,10 @@
-import sys
 import asyncio
-import signal
 import logging
+import signal
+import sys
 
-from src.config import Config, validate_config
 from src import DiscordBot
+from src.config import Config, validate_config
 
 
 def setup_logging() -> None:

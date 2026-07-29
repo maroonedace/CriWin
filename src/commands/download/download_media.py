@@ -1,9 +1,8 @@
 import asyncio
 import logging
 from pathlib import Path
-from typing import Union
 
-from discord import Interaction, File
+from discord import File, Interaction
 
 from src.commands.download.constants import (
     DOWNLOAD_SENT_TO_CHANNEL_MESSAGE,
@@ -12,12 +11,17 @@ from src.commands.download.constants import (
 )
 from src.commands.download.limits import get_max_upload_mb
 from src.core.messaging import send_message
-from src.services.media import gallery_downloader, is_file_too_large, is_instagram_url, video_downloader
+from src.services.media import (
+    gallery_downloader,
+    is_file_too_large,
+    is_instagram_url,
+    video_downloader,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def _collect_files(result: Union[Path, list[Path]]) -> list[Path]:
+def _collect_files(result: Path | list[Path]) -> list[Path]:
     """Normalize the downloader result into a flat list of Paths."""
     if isinstance(result, list):
         return result
@@ -61,8 +65,10 @@ async def handle_download_media(
         if is_hidden:
             await interaction.followup.send(files=discord_files, ephemeral=True)
             return
-        
-        await interaction.followup.send(files=discord_files, content=DOWNLOAD_SENT_TO_CHANNEL_MESSAGE)
+
+        await interaction.followup.send(
+            files=discord_files, content=DOWNLOAD_SENT_TO_CHANNEL_MESSAGE
+        )
 
         logger.info("Media download completed for user %s", user_id)
 

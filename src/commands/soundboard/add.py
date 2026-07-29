@@ -1,8 +1,6 @@
-from discord import Interaction
 import discord
+from discord import Interaction
 
-from src.services.soundboard import get_sounds, upload_sound_file
-from src.core.messaging import send_message
 from src.commands.soundboard.constants import (
     ALLOWED_CONTENT_TYPES,
     DISPLAY_NAME_INVALID_MESSAGE,
@@ -10,9 +8,13 @@ from src.commands.soundboard.constants import (
     ID_RE,
     INVALID_AUDIO_MESSAGE,
 )
+from src.core.messaging import send_message
+from src.services.soundboard import get_sounds, upload_sound_file
 
 
-async def handle_add(interaction: Interaction, sound_name: str, sound_file: discord.Attachment) -> None:
+async def handle_add(
+    interaction: Interaction, sound_name: str, sound_file: discord.Attachment
+) -> None:
     # Acknowledge the interaction and defer response
     await interaction.response.defer(ephemeral=True)
 
@@ -39,7 +41,4 @@ async def handle_add(interaction: Interaction, sound_name: str, sound_file: disc
         await send_message(interaction, str(err))
         return
 
-    await send_message(
-        interaction,
-        f"✅ Added **{sound_name}** → {sound_file.filename}"
-    )
+    await send_message(interaction, f"✅ Added **{sound_name}** → {sound_file.filename}")

@@ -7,7 +7,6 @@ never requires a redeploy.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 from src.config import Config
 from src.services import storage
@@ -28,7 +27,7 @@ def put_cookie(name: str, data: bytes) -> None:
     storage.put_bytes(_object_key(name), data, "text/plain")
 
 
-def fetch_to_cache(name: str) -> Optional[Path]:
+def fetch_to_cache(name: str) -> Path | None:
     """Fetch the current cookie for ``name`` from storage into the local cache.
 
     Returns the local path. If the cookie is not in storage, falls back to an
@@ -43,7 +42,7 @@ def fetch_to_cache(name: str) -> Optional[Path]:
         return dest if dest.exists() else None
 
 
-def list_cookies() -> List[str]:
+def list_cookies() -> list[str]:
     """List the logical cookie names present in object storage."""
     names = []
     for key in storage.list_keys(f"{COOKIE_PREFIX}/"):
