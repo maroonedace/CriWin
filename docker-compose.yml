@@ -99,7 +99,7 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:8080:8080"
+      - "${ADMIN_HOST}:${ADMIN_PORT}:${ADMIN_PORT}"
 
 volumes:
   db_data:
