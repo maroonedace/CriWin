@@ -48,8 +48,8 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       GUILD_ID: ${GUILD_ID}
 
-      DB_HOST: db
-      DB_PORT: 5432
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -57,19 +57,19 @@ services:
       STORAGE_REGION: ${STORAGE_REGION}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
       STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
-      STORAGE_ENDPOINT: storage:9000
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
-      STORAGE_SECURE: "false"
+      STORAGE_SECURE: ${STORAGE_SECURE}
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
     volumes:
-      - ./src:/discord_bot/src
-      - ./main.py:/discord_bot/main.py
-      - ./cache:/discord_bot/cache
-      - ./cookies:/discord_bot/cookies
+      - ./src:/criwin/src
+      - ./main.py:/criwin/main.py
+      - ./cache:/criwin/cache
+      - ./cookies:/criwin/cookies
 
   admin:
     image: criwin
@@ -95,9 +95,7 @@ services:
       STORAGE_SECURE: "false"
 
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    # Loopback-only publish: reach it over an SSH / Tailscale tunnel, never a
-    # public port. The container binds 0.0.0.0:8080 internally.
     ports:
-      - "127.0.0.1:${ADMIN_PORT:-8080}:8080"
+      - "127.0.0.1:-8080:8080"
     volumes:
-      - ./src:/discord_bot/src
+      - ./src:/criwin/src

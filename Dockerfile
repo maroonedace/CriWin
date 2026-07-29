@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # Set Work Directory
-WORKDIR /discord_bot
+WORKDIR /criwin
 
 # Install OS libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
