@@ -1,14 +1,15 @@
 import os
 
-DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
+from src.config import Config
 
-YOUTUBE_COOKIE_FILE = "/criwin/cookies/www.youtube.com_cookies.txt"
-INSTAGRAM_COOKIE_FILE = "/criwin/cookies/www.instagram.com_cookies.txt"
+DOWNLOAD_DIR = Config.DOWNLOAD_DIR
 
-COOKIE_MAP = {
-    "youtube.com": YOUTUBE_COOKIE_FILE,
-    "youtu.be": YOUTUBE_COOKIE_FILE,
-    "instagram.com": INSTAGRAM_COOKIE_FILE,
+# URL host -> logical cookie name. The cookie is stored in object storage at
+# cookies/<name>.txt and cached locally at COOKIE_DIR/<name>.txt.
+COOKIE_DOMAINS = {
+    "youtube.com": "youtube",
+    "youtu.be": "youtube",
+    "instagram.com": "instagram",
 }
 
 DEFAULT_UPLOAD_LIMIT_MB = 10
@@ -19,8 +20,6 @@ BOOST_LEVEL_UPLOAD_SIZE = {
     2: 50,
     3: 100,
 }
-
-SUPPORTED_DOMAINS = ["youtube.com", "youtu.be", "instagram.com"]
 
 VIDEO_EXTENSIONS = {".mp4", ".webm", ".mkv", ".avi", ".mov"}
 
@@ -63,8 +62,6 @@ YTDL_VIDEO = {
 }
 
 # User-facing messages
-NOT_VIDEO_MESSAGE = "⚠️ This is not a video."
-PLAYLIST_MESSAGE = "⚠️ This is a playlist."
 LIVE_STREAM_MESSAGE = "⚠️ This is a live stream."
 URL_INVALID_MESSAGE = "⚠️ This URL is invalid or the video could not be downloaded."
 UNSUPPORTED_URL_MESSAGE = "⚠️ This URL is not from a supported platform."

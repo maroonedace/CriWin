@@ -7,21 +7,14 @@ from discord import Interaction, File
 
 from src.commands.download.constants import (
     DOWNLOAD_SENT_TO_CHANNEL_MESSAGE,
-    LARGE_FILE_MESSAGE,
     LIMIT_DOWNLOAD_MESSAGE,
+    large_file_message,
 )
-
-from src.commands.utils import send_message
-from src.download.constants import BOOST_LEVEL_UPLOAD_SIZE, DEFAULT_UPLOAD_LIMIT_MB
-from src.download.utils import gallery_downloader, is_file_too_large, is_instagram_url, video_downloader
+from src.commands.download.limits import get_max_upload_mb
+from src.core.messaging import send_message
+from src.services.media import gallery_downloader, is_file_too_large, is_instagram_url, video_downloader
 
 logger = logging.getLogger(__name__)
-
-
-def _get_max_upload_mb(interaction: Interaction) -> int:
-    if interaction.guild is not None:
-        return BOOST_LEVEL_UPLOAD_SIZE.get(interaction.guild.premium_tier, DEFAULT_UPLOAD_LIMIT_MB)
-    return DEFAULT_UPLOAD_LIMIT_MB
 
 
 def _collect_files(result: Union[Path, list[Path]]) -> list[Path]:
@@ -31,7 +24,7 @@ def _collect_files(result: Union[Path, list[Path]]) -> list[Path]:
     return [result]
 
 
-async def setup_download_media(
+async def handle_download_media(
     interaction: Interaction,
     active_downloads: set[int],
     url: str,
@@ -58,10 +51,10 @@ async def setup_download_media(
 
         files = _collect_files(result)
 
-        max_size_mb = _get_max_upload_mb(interaction)
+        max_size_mb = get_max_upload_mb(interaction)
         for file_path in files:
             if is_file_too_large(str(file_path), max_size_mb):
-                raise ValueError(LARGE_FILE_MESSAGE)
+                raise ValueError(large_file_message(max_size_mb))
 
         discord_files = [File(str(f)) for f in files]
 

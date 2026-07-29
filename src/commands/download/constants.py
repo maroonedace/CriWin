@@ -1,4 +1,7 @@
 DOWNLOAD_SENT_TO_CHANNEL_MESSAGE = 'Download sent to channel!'
-UNSUPPORTED_DOMAIN_MESSAGE = '⚠️ This is not one of the supported domains.'
 LIMIT_DOWNLOAD_MESSAGE = '⚠️ You already have a download in progress.'
-LARGE_FILE_MESSAGE = '⚠️ This file is over 10MB in size.'
+
+
+def large_file_message(max_size_mb: int) -> str:
+    """Message shown when a download exceeds the guild's upload limit."""
+    return f"⚠️ This file is larger than the {max_size_mb}MB upload limit."
