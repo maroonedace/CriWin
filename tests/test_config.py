@@ -34,3 +34,7 @@ class TestConfigTypes:
 
     def test_storage_secure_is_bool(self):
         assert isinstance(Config.STORAGE_SECURE, bool)
+
+    def test_environment_defaults_to_production(self):
+        # Safe default: unset ENVIRONMENT means production (global, single-copy sync).
+        assert Config.ENVIRONMENT == "production"

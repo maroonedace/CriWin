@@ -15,6 +15,7 @@ services:
 
   app:
     environment:
+      ENVIRONMENT: dev
       # Don't scatter root-owned __pycache__ into the bind-mounted ./src on Linux hosts.
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
