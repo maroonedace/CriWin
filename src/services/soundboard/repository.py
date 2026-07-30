@@ -75,3 +75,38 @@ class DatabaseOperations:
         except Exception as e:
             conn.rollback()
             raise ValueError(f"Could not rename sound: {str(e)}") from e
+
+    @staticmethod
+    def get_panel() -> dict[str, Any] | None:
+        """Return the stored soundboard panel location, or None if not set up."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT channel_id, message_ids FROM soundboard_panel WHERE id = 1;")
+                row = cursor.fetchone()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"{ErrorMessages.DATABASE}: {str(e)}") from e
+        return dict(row) if row else None
+
+    @staticmethod
+    def save_panel(channel_id: int, message_ids: list[int]) -> None:
+        """Upsert the single-row soundboard panel location (channel + message ids)."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO soundboard_panel (id, channel_id, message_ids, updated_at)
+                    VALUES (1, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO UPDATE
+                        SET channel_id = EXCLUDED.channel_id,
+                            message_ids = EXCLUDED.message_ids,
+                            updated_at = CURRENT_TIMESTAMP;
+                    """,
+                    (channel_id, message_ids),
+                )
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"Could not save soundboard panel: {str(e)}") from e
