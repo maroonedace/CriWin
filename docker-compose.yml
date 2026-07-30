@@ -98,8 +98,9 @@ services:
 
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_PORT: ${ADMIN_PORT}
     ports:
-      - "${ADMIN_HOST}:${ADMIN_PORT}:${ADMIN_PORT}"
+      - "${ADMIN_PUBLISH_HOST}:${ADMIN_PORT}:${ADMIN_PORT}"
 
 volumes:
   db_data:

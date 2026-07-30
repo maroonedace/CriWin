@@ -153,9 +153,11 @@ Bash, or use the `docker compose` commands above directly.)
 
 ### Admin panel
 
-The `admin` service publishes only to the host loopback
-(`127.0.0.1:${ADMIN_PORT}`), so there is no public port. Reach it over an SSH or
-Tailscale tunnel — e.g. from your machine:
+The `admin` service publishes on `${ADMIN_PUBLISH_HOST}:${ADMIN_PORT}`. Keep
+`ADMIN_PUBLISH_HOST=127.0.0.1` (the default in `.env.example`) to bind the host loopback
+only, so there is no public port — reach it over an SSH or Tailscale tunnel. Inside the
+container uvicorn always binds `0.0.0.0` so the published port can reach it; the two are
+separate on purpose. From your machine:
 
 ```bash
 ssh -L 8080:localhost:8080 your-server
