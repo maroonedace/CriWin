@@ -12,6 +12,8 @@ from src.config import Config
 from src.services import storage
 
 COOKIE_PREFIX = "cookies"
+SUPPORTED_COOKIE_PLATFORMS: tuple[str, ...] = ("instagram", "youtube")
+COOKIE_PLATFORM_LABELS = {"instagram": "Instagram", "youtube": "YouTube"}
 
 
 def _object_key(name: str) -> str:

@@ -15,7 +15,12 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 
 from src.config import Config
-from src.services.cookies import list_cookies, put_cookie
+from src.services.cookies import (
+    COOKIE_PLATFORM_LABELS,
+    SUPPORTED_COOKIE_PLATFORMS,
+    list_cookies,
+    put_cookie,
+)
 from src.services.soundboard import (
     delete_sound,
     get_sounds,
@@ -87,10 +92,15 @@ def _redirect_home() -> RedirectResponse:
 
 @app.get("/")
 def index(request: Request, _: None = Depends(require_auth)):
+    stored = set(list_cookies())
+    cookie_platforms = [
+        {"name": platform, "label": COOKIE_PLATFORM_LABELS[platform], "is_set": platform in stored}
+        for platform in SUPPORTED_COOKIE_PLATFORMS
+    ]
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"sounds": get_sounds(), "cookies": list_cookies()},
+        {"sounds": get_sounds(), "cookie_platforms": cookie_platforms},
     )
 
 
@@ -140,12 +150,14 @@ def update_volume(name: str, volume: float = Form(...), _: None = Depends(requir
     return _redirect_home()
 
 
-@app.post("/cookies")
+@app.post("/cookies/{platform}")
 async def upload_cookie(
-    name: str = Form(...),
+    platform: str,
     file: UploadFile = File(...),
     _: None = Depends(require_auth),
 ):
+    if platform not in SUPPORTED_COOKIE_PLATFORMS:
+        raise HTTPException(status_code=404, detail="Unknown platform")
     data = await file.read()
-    put_cookie(name, data)
+    put_cookie(platform, data)
     return _redirect_home()

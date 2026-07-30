@@ -58,7 +58,11 @@ def test_index_lists_sounds_and_cookies(client):
 
     assert response.status_code == 200
     assert "Boom" in response.text
-    assert "youtube" in response.text
+    assert "Instagram" in response.text
+    assert "YouTube" in response.text
+    assert "/cookies/youtube" in response.text
+    assert "Set" in response.text
+    assert "Not set" in response.text
 
 
 def test_upload_sound_calls_service(client):
@@ -222,12 +226,24 @@ def test_set_volume_calls_service(client):
 def test_upload_cookie_calls_service(client):
     with patch.object(webapp, "put_cookie") as put:
         response = client.post(
-            "/cookies",
+            "/cookies/youtube",
             auth=AUTH,
-            data={"name": "youtube"},
             files={"file": ("cookies.txt", b"cookie-data", "text/plain")},
             follow_redirects=False,
         )
 
     assert response.status_code == 303
     put.assert_called_once_with("youtube", b"cookie-data")
+
+
+def test_upload_cookie_unknown_platform_404(client):
+    with patch.object(webapp, "put_cookie") as put:
+        response = client.post(
+            "/cookies/tiktok",
+            auth=AUTH,
+            files={"file": ("cookies.txt", b"cookie-data", "text/plain")},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 404
+    put.assert_not_called()
