@@ -1,8 +1,10 @@
 import logging
 
 from discord import Client, Intents, Message, Object, app_commands
+from discord.ext import tasks
 
 from src.commands import setup_commands
+from src.commands.soundboard.panel import SoundButton, refresh_panel
 from src.config import Config
 from src.events import handle_dm_message
 
@@ -46,11 +48,27 @@ class DiscordBot(Client):
     async def setup_hook(self):
         """Initialize commands and sync with Discord."""
         setup_commands(self.tree)
+        # Register the persistent soundboard buttons so clicks work across restarts.
+        self.add_dynamic_items(SoundButton)
 
         is_dev = Config.ENVIRONMENT.lower() in DEV_ENVIRONMENTS
         mode = "dev (guild-scoped, instant)" if is_dev else "production (global)"
         logger.info("Syncing commands: %s", mode)
         await sync_commands(self.tree, self.guild, is_dev)
+
+        self.panel_sync.start()
+
+    @tasks.loop(hours=1)
+    async def panel_sync(self):
+        """Hourly (and on-boot) refresh of the soundboard button panel."""
+        try:
+            await refresh_panel(self)
+        except Exception:
+            logger.exception("Soundboard panel sync failed")
+
+    @panel_sync.before_loop
+    async def _before_panel_sync(self):
+        await self.wait_until_ready()
 
     async def on_message(self, message: Message):
         if message.author == self.user:

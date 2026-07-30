@@ -1,5 +1,6 @@
 from discord import Interaction, app_commands
 
+from src.commands.soundboard.panel import handle_setup_panel
 from src.commands.soundboard.play import handle_play
 from src.services.soundboard import autocomplete_sound_name
 
@@ -10,6 +11,15 @@ def setup_soundboard(tree: app_commands.CommandTree):
     @app_commands.describe(sound_name="Select a sound to play")
     async def soundboard_play(interaction: Interaction, sound_name: str):
         await handle_play(interaction, sound_name)
+
+    @tree.command(
+        name="soundboard-panel",
+        description="Create the soundboard button panel in this channel.",
+    )
+    @app_commands.guild_only()
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def soundboard_panel(interaction: Interaction):
+        await handle_setup_panel(interaction)
 
     @soundboard_play.autocomplete("sound_name")
     async def play_sound_autocomplete(

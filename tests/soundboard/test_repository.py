@@ -101,3 +101,31 @@ class TestDatabaseOperations:
         assert "UPDATE sounds SET name" in sql
         assert params == ("New", "Old")
         conn.commit.assert_called_once()
+
+    def test_get_panel_returns_row(self):
+        conn, cursor = self._conn_with_cursor()
+        cursor.fetchone.return_value = {"channel_id": 999, "message_ids": [1, 2]}
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            result = repo.DatabaseOperations.get_panel()
+
+        assert result == {"channel_id": 999, "message_ids": [1, 2]}
+
+    def test_get_panel_returns_none_when_absent(self):
+        conn, cursor = self._conn_with_cursor()
+        cursor.fetchone.return_value = None
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            assert repo.DatabaseOperations.get_panel() is None
+
+    def test_save_panel_upserts(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.save_panel(999, [1, 2, 3])
+
+        sql, params = cursor.execute.call_args.args
+        assert "INSERT INTO soundboard_panel" in sql
+        assert "ON CONFLICT" in sql
+        assert params == (999, [1, 2, 3])
+        conn.commit.assert_called_once()

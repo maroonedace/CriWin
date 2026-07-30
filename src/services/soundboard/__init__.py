@@ -11,8 +11,10 @@ from src.services.soundboard.service import (
     autocomplete_sound_name,
     delete_sound,
     download_sound_file,
+    get_panel,
     get_sounds,
     rename_sound,
+    save_panel,
     set_volume,
     upload_sound_file,
 )
@@ -22,8 +24,10 @@ __all__ = [
     "autocomplete_sound_name",
     "delete_sound",
     "download_sound_file",
+    "get_panel",
     "get_sounds",
     "rename_sound",
+    "save_panel",
     "set_volume",
     "upload_sound_file",
 ]

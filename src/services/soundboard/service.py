@@ -72,6 +72,16 @@ def download_sound_file(file_name: str) -> None:
     storage.fget(_object_key(file_name), dest)
 
 
+def get_panel() -> dict[str, Any] | None:
+    """Return the stored soundboard panel location (channel id + message ids), or None."""
+    return DatabaseOperations.get_panel()
+
+
+def save_panel(channel_id: int, message_ids: list[int]) -> None:
+    """Persist the soundboard panel location (channel id + message ids)."""
+    DatabaseOperations.save_panel(channel_id, message_ids)
+
+
 async def autocomplete_sound_name(current: str) -> list[app_commands.Choice[str]]:
     """Generate autocomplete choices for sound names"""
     try:
