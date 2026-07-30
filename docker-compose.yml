@@ -10,7 +10,7 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -96,6 +96,7 @@ services:
       STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME}
       STORAGE_SECURE: ${STORAGE_SECURE}
 
+      ADMIN_HOST: ${ADMIN_HOST}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       ADMIN_PORT: ${ADMIN_PORT}
