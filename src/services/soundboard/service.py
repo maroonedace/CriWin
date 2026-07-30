@@ -82,6 +82,21 @@ def save_panel(channel_id: int, message_ids: list[int]) -> None:
     DatabaseOperations.save_panel(channel_id, message_ids)
 
 
+def get_access_role_ids(guild_id: int) -> list[int]:
+    """Return the role ids allowed to use the soundboard panel in a guild."""
+    return DatabaseOperations.get_access_role_ids(guild_id)
+
+
+def add_access_role(guild_id: int, role_id: int) -> None:
+    """Grant a role access to the soundboard panel."""
+    DatabaseOperations.add_access_role(guild_id, role_id)
+
+
+def remove_access_role(guild_id: int, role_id: int) -> None:
+    """Revoke a role's access to the soundboard panel."""
+    DatabaseOperations.remove_access_role(guild_id, role_id)
+
+
 async def autocomplete_sound_name(current: str) -> list[app_commands.Choice[str]]:
     """Generate autocomplete choices for sound names"""
     try:

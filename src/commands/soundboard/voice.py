@@ -12,12 +12,13 @@ from pathlib import Path
 
 from discord import FFmpegPCMAudio, Interaction, PCMVolumeTransformer
 
+from src.commands.soundboard.access import NO_ACCESS_MESSAGE, has_panel_access
 from src.commands.soundboard.constants import (
     UNAVAILABLE_SOUND_MESSAGE,
     VOICE_STATE_INVALID_MESSAGE,
 )
 from src.core.messaging import send_message
-from src.services.soundboard import download_sound_file, get_sounds
+from src.services.soundboard import download_sound_file, get_access_role_ids, get_sounds
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,12 @@ async def play_sound(interaction: Interaction, sound_name: str) -> None:
     await interaction.response.defer(ephemeral=True)
 
     member = interaction.user
+
+    allowed = set(get_access_role_ids(interaction.guild.id))
+    if not has_panel_access(member, allowed):
+        await send_message(interaction, NO_ACCESS_MESSAGE)
+        return
+
     if not member.voice or not member.voice.channel:
         await send_message(interaction, VOICE_STATE_INVALID_MESSAGE)
         return
