@@ -9,6 +9,8 @@ DOWNLOAD_DIR = Config.DOWNLOAD_DIR
 COOKIE_DOMAINS = {
     "youtube.com": "youtube",
     "youtu.be": "youtube",
+    "tiktok.com": "youtube",
+    "reddit.com": "youtube",
     "instagram.com": "instagram",
 }
 
