@@ -17,6 +17,10 @@ load_dotenv()
 
 
 class Config:
+    # Environment: "production" (default) or "dev"/"development". Selects the slash
+    # command sync strategy in src/bot.py (dev = instant guild sync; prod = global).
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+
     # Discord
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     GUILD_ID = os.getenv("GUILD_ID")

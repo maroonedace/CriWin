@@ -42,6 +42,7 @@ services:
       storage:
         condition: service_healthy
     environment:
+      ENVIRONMENT: ${ENVIRONMENT}
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       GUILD_ID: ${GUILD_ID}
       LOG_LEVEL: ${LOG_LEVEL}
