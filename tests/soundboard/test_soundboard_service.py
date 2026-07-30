@@ -53,6 +53,17 @@ async def test_upload_sound_file_wraps_errors():
             await svc.upload_sound_file("n", b"x", "f.mp3", "audio/mpeg")
 
 
+def test_rename_sound_updates_and_invalidates():
+    with (
+        patch.object(svc.DatabaseOperations, "rename_sound") as rename,
+        patch.object(svc.SoundCache, "invalidate") as invalidate,
+    ):
+        svc.rename_sound("Old", "New")
+
+    rename.assert_called_once_with("Old", "New")
+    invalidate.assert_called_once()
+
+
 @pytest.mark.asyncio
 async def test_delete_sound_removes_from_all_stores():
     with (

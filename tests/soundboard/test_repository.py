@@ -90,3 +90,14 @@ class TestDatabaseOperations:
         assert "UPDATE sounds SET volume" in sql
         assert params == (0.5, "My Sound")
         conn.commit.assert_called_once()
+
+    def test_rename_updates_row(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.rename_sound("Old", "New")
+
+        sql, params = cursor.execute.call_args.args
+        assert "UPDATE sounds SET name" in sql
+        assert params == ("New", "Old")
+        conn.commit.assert_called_once()

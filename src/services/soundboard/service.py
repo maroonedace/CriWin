@@ -59,6 +59,12 @@ def set_volume(name: str, volume: float) -> None:
     SoundCache.invalidate()
 
 
+def rename_sound(old_name: str, new_name: str) -> None:
+    """Rename a sound's display name (metadata only; the stored file is unchanged)."""
+    DatabaseOperations.rename_sound(old_name, new_name)
+    SoundCache.invalidate()
+
+
 def download_sound_file(file_name: str) -> None:
     """Download sound file from object storage to the local cache"""
     SoundCache.ensure_cache_dir()

@@ -63,3 +63,15 @@ class DatabaseOperations:
         except Exception as e:
             conn.rollback()
             raise ValueError(f"Could not update sound volume: {str(e)}") from e
+
+    @staticmethod
+    def rename_sound(old_name: str, new_name: str) -> None:
+        """Rename a sound (updates the display name only, not the stored file)"""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("UPDATE sounds SET name = %s WHERE name = %s;", (new_name, old_name))
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"Could not rename sound: {str(e)}") from e

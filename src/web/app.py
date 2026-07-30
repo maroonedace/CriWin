@@ -7,6 +7,7 @@ tunnel — run a single worker (the DB/storage clients are module-level singleto
 
 import secrets
 from pathlib import Path
+from typing import Any
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
@@ -15,7 +16,18 @@ from fastapi.templating import Jinja2Templates
 
 from src.config import Config
 from src.services.cookies import list_cookies, put_cookie
-from src.services.soundboard import delete_sound, get_sounds, set_volume, upload_sound_file
+from src.services.soundboard import (
+    delete_sound,
+    get_sounds,
+    rename_sound,
+    set_volume,
+    upload_sound_file,
+)
+from src.services.soundboard.validation import (
+    DUPLICATE_NAME_MESSAGE,
+    INVALID_NAME_MESSAGE,
+    is_valid_name,
+)
 
 app = FastAPI(title="Criwin Admin")
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -56,6 +68,19 @@ def _find_file_name(name: str) -> str | None:
     return None
 
 
+def _validate_name(name: str, sounds: list[dict[str, Any]], current: str | None = None) -> None:
+    """Enforce the shared display-name rules for create/rename.
+
+    Raises HTTP 400 on an invalid format or a name already taken by another sound.
+    ``current`` is the sound being renamed, so renaming to its own name is not a
+    false duplicate.
+    """
+    if not is_valid_name(name):
+        raise HTTPException(status_code=400, detail=INVALID_NAME_MESSAGE)
+    if any(sound["name"] == name and sound["name"] != current for sound in sounds):
+        raise HTTPException(status_code=400, detail=DUPLICATE_NAME_MESSAGE)
+
+
 def _redirect_home() -> RedirectResponse:
     return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -75,6 +100,7 @@ async def create_sound(
     file: UploadFile = File(...),
     _: None = Depends(require_auth),
 ):
+    _validate_name(name, get_sounds())
     data = await file.read()
     try:
         await upload_sound_file(name, data, file.filename, file.content_type)
@@ -90,6 +116,19 @@ async def remove_sound(name: str, _: None = Depends(require_auth)):
         raise HTTPException(status_code=404, detail="Sound not found")
     try:
         await delete_sound(name, file_name)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return _redirect_home()
+
+
+@app.post("/sounds/{name}/rename")
+def rename(name: str, new_name: str = Form(...), _: None = Depends(require_auth)):
+    sounds = get_sounds()
+    if not any(sound["name"] == name for sound in sounds):
+        raise HTTPException(status_code=404, detail="Sound not found")
+    _validate_name(new_name, sounds, current=name)
+    try:
+        rename_sound(name, new_name)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
     return _redirect_home()
