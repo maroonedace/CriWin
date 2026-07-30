@@ -5,7 +5,7 @@ from discord import app_commands
 
 from src.config import Config
 from src.services import storage
-from src.services.audio import normalize_audio
+from src.services.processing import normalize_audio
 from src.services.soundboard.cache import FileOperations, SoundCache
 from src.services.soundboard.repository import DatabaseOperations
 

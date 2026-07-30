@@ -1,11 +1,9 @@
 import logging
 import os
-import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
 
 from gallery_dl import config, job
-from PIL import Image
 from yt_dlp import YoutubeDL
 
 from src.services import cookies
@@ -20,6 +18,7 @@ from src.services.media.constants import (
     YTDL_META,
     YTDL_VIDEO,
 )
+from src.services.processing import convert_to_mp4, convert_to_png
 
 logger = logging.getLogger(__name__)
 
@@ -66,92 +65,6 @@ def inject_cookies(opts: dict, cookie_file: str | None) -> dict:
     if cookie_file is not None:
         opts["cookiefile"] = cookie_file
     return opts
-
-
-def convert_to_mp4(file_path: Path) -> Path:
-    """Convert a video file to mp4, attempting stream copy first then re-encode."""
-    mp4_path = file_path.with_suffix(".mp4")
-
-    # Probe the source codecs
-    probe = subprocess.run(
-        [
-            "ffprobe",
-            "-v",
-            "quiet",
-            "-show_entries",
-            "stream=codec_name",
-            "-of",
-            "csv=p=0",
-            str(file_path),
-        ],
-        capture_output=True,
-        text=True,
-    )
-
-    codecs = [line.strip() for line in probe.stdout.splitlines() if line.strip()]
-    copy_safe = all(c in ("h264", "aac", "mp3") for c in codecs)
-
-    if copy_safe and file_path.suffix.lower() == ".mp4":
-        return file_path
-
-    mp4_path = file_path.with_name(f"{file_path.stem}_converted.mp4")
-
-    if copy_safe:
-        cmd = [
-            "ffmpeg",
-            "-i",
-            str(file_path),
-            "-c",
-            "copy",
-            "-movflags",
-            "+faststart",
-            "-y",
-            str(mp4_path),
-        ]
-    else:
-        cmd = [
-            "ffmpeg",
-            "-i",
-            str(file_path),
-            "-c:v",
-            "libx264",
-            "-preset",
-            "veryfast",
-            "-crf",
-            "28",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "128k",
-            "-movflags",
-            "+faststart",
-            "-y",
-            str(mp4_path),
-        ]
-
-    result = subprocess.run(cmd, capture_output=True)
-
-    if result.returncode == 0:
-        file_path.unlink()
-        final_path = file_path.with_suffix(".mp4")
-        mp4_path.rename(final_path)
-        return final_path
-
-    logger.warning("Failed to convert %s to mp4", file_path)
-    return file_path
-
-
-def convert_to_png(file_path: Path) -> Path | None:
-    """Convert an image file to PNG format."""
-    try:
-        with Image.open(file_path) as img:
-            stem = file_path.stem.rstrip(".")
-            png_path = file_path.parent / f"{stem}.png"
-            img.save(png_path, "PNG")
-            return png_path
-    except Exception:
-        logger.exception("Failed to convert %s to PNG", file_path)
-        return None
 
 
 def video_downloader(url: str, is_video_download: bool) -> Path:
