@@ -1,6 +1,11 @@
 from unittest.mock import patch
 
 import src.services.cookies as cookies
+from src.services.media.constants import COOKIE_DOMAINS
+
+
+def test_supported_platforms_match_cookie_domains():
+    assert set(COOKIE_DOMAINS.values()) == set(cookies.SUPPORTED_COOKIE_PLATFORMS)
 
 
 def test_put_cookie_stores_to_object_storage():

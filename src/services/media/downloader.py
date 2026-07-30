@@ -160,6 +160,8 @@ def video_downloader(url: str, is_video_download: bool) -> Path:
         raise ValueError(UNSUPPORTED_URL_MESSAGE)
 
     cookie_file = get_cookie_file(url)
+    if cookie_file is None:
+        logger.warning("No %s cookie configured; the download may fail.", _cookie_name(url))
 
     try:
         meta_opts = inject_cookies(YTDL_META, cookie_file)
@@ -207,6 +209,11 @@ def gallery_downloader(url: str) -> list[Path] | Path:
             ("extractor",),
             "instagram",
             {"cookies": str(instagram_cookie)},
+        )
+    else:
+        logger.warning(
+            "No Instagram cookie configured; the download will likely be blocked by a "
+            "login redirect."
         )
 
     try:
