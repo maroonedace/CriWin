@@ -62,7 +62,10 @@ def test_index_lists_sounds_and_cookies(client):
 
 
 def test_upload_sound_calls_service(client):
-    with patch.object(webapp, "upload_sound_file", new_callable=AsyncMock) as upload:
+    with (
+        patch.object(webapp, "get_sounds", return_value=[]),
+        patch.object(webapp, "upload_sound_file", new_callable=AsyncMock) as upload,
+    ):
         response = client.post(
             "/sounds",
             auth=AUTH,
@@ -73,6 +76,44 @@ def test_upload_sound_calls_service(client):
 
     assert response.status_code == 303
     upload.assert_awaited_once_with("Boom", b"audio-bytes", "boom.mp3", "audio/mpeg")
+
+
+def test_upload_invalid_name_rejected(client):
+    with (
+        patch.object(webapp, "get_sounds", return_value=[]),
+        patch.object(webapp, "upload_sound_file", new_callable=AsyncMock) as upload,
+    ):
+        response = client.post(
+            "/sounds",
+            auth=AUTH,
+            data={"name": "bad~name"},
+            files={"file": ("boom.mp3", b"audio-bytes", "audio/mpeg")},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 400
+    upload.assert_not_awaited()
+
+
+def test_upload_duplicate_name_rejected(client):
+    with (
+        patch.object(
+            webapp,
+            "get_sounds",
+            return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}],
+        ),
+        patch.object(webapp, "upload_sound_file", new_callable=AsyncMock) as upload,
+    ):
+        response = client.post(
+            "/sounds",
+            auth=AUTH,
+            data={"name": "Boom"},
+            files={"file": ("boom2.mp3", b"audio-bytes", "audio/mpeg")},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 400
+    upload.assert_not_awaited()
 
 
 def test_delete_sound_resolves_file_name(client):
@@ -99,6 +140,73 @@ def test_delete_unknown_sound_404(client):
 
     assert response.status_code == 404
     delete.assert_not_called()
+
+
+def test_rename_sound_calls_service(client):
+    with (
+        patch.object(
+            webapp,
+            "get_sounds",
+            return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}],
+        ),
+        patch.object(webapp, "rename_sound") as rename,
+    ):
+        response = client.post(
+            "/sounds/Boom/rename", auth=AUTH, data={"new_name": "Bang"}, follow_redirects=False
+        )
+
+    assert response.status_code == 303
+    rename.assert_called_once_with("Boom", "Bang")
+
+
+def test_rename_unknown_sound_404(client):
+    with (
+        patch.object(webapp, "get_sounds", return_value=[]),
+        patch.object(webapp, "rename_sound") as rename,
+    ):
+        response = client.post(
+            "/sounds/Ghost/rename", auth=AUTH, data={"new_name": "Boo"}, follow_redirects=False
+        )
+
+    assert response.status_code == 404
+    rename.assert_not_called()
+
+
+def test_rename_invalid_name_rejected(client):
+    with (
+        patch.object(
+            webapp,
+            "get_sounds",
+            return_value=[{"name": "Boom", "file_name": "boom.mp3", "volume": 1.0}],
+        ),
+        patch.object(webapp, "rename_sound") as rename,
+    ):
+        response = client.post(
+            "/sounds/Boom/rename", auth=AUTH, data={"new_name": "bad~name"}, follow_redirects=False
+        )
+
+    assert response.status_code == 400
+    rename.assert_not_called()
+
+
+def test_rename_duplicate_name_rejected(client):
+    with (
+        patch.object(
+            webapp,
+            "get_sounds",
+            return_value=[
+                {"name": "Boom", "file_name": "boom.mp3", "volume": 1.0},
+                {"name": "Bang", "file_name": "bang.mp3", "volume": 1.0},
+            ],
+        ),
+        patch.object(webapp, "rename_sound") as rename,
+    ):
+        response = client.post(
+            "/sounds/Boom/rename", auth=AUTH, data={"new_name": "Bang"}, follow_redirects=False
+        )
+
+    assert response.status_code == 400
+    rename.assert_not_called()
 
 
 def test_set_volume_calls_service(client):
