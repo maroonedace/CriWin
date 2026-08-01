@@ -18,3 +18,11 @@ CREATE TABLE IF NOT EXISTS soundboard_panel (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT soundboard_panel_single_row CHECK (id = 1)
 );
+
+-- Roles allowed to use the soundboard button panel, per guild. With no rows for a
+-- guild the panel is open to everyone; otherwise a member needs one of these roles.
+CREATE TABLE IF NOT EXISTS soundboard_access (
+    guild_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    PRIMARY KEY (guild_id, role_id)
+);

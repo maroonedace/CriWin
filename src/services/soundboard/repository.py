@@ -110,3 +110,49 @@ class DatabaseOperations:
         except Exception as e:
             conn.rollback()
             raise ValueError(f"Could not save soundboard panel: {str(e)}") from e
+
+    @staticmethod
+    def get_access_role_ids(guild_id: int) -> list[int]:
+        """Return the role ids allowed to use the panel in a guild (empty = open)."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT role_id FROM soundboard_access WHERE guild_id = %s;", (guild_id,)
+                )
+                rows = cursor.fetchall()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"{ErrorMessages.DATABASE}: {str(e)}") from e
+        return [row[0] for row in rows]
+
+    @staticmethod
+    def add_access_role(guild_id: int, role_id: int) -> None:
+        """Grant a role access to the panel (idempotent)."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO soundboard_access (guild_id, role_id) VALUES (%s, %s) "
+                    "ON CONFLICT (guild_id, role_id) DO NOTHING;",
+                    (guild_id, role_id),
+                )
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"Could not add soundboard access role: {str(e)}") from e
+
+    @staticmethod
+    def remove_access_role(guild_id: int, role_id: int) -> None:
+        """Revoke a role's access to the panel."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM soundboard_access WHERE guild_id = %s AND role_id = %s;",
+                    (guild_id, role_id),
+                )
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"Could not remove soundboard access role: {str(e)}") from e

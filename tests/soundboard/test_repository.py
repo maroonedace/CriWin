@@ -129,3 +129,35 @@ class TestDatabaseOperations:
         assert "ON CONFLICT" in sql
         assert params == (999, [1, 2, 3])
         conn.commit.assert_called_once()
+
+    def test_get_access_role_ids(self):
+        conn, cursor = self._conn_with_cursor()
+        cursor.fetchall.return_value = [(11,), (22,)]
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            result = repo.DatabaseOperations.get_access_role_ids(999)
+
+        assert result == [11, 22]
+
+    def test_add_access_role_upserts(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.add_access_role(999, 11)
+
+        sql, params = cursor.execute.call_args.args
+        assert "INSERT INTO soundboard_access" in sql
+        assert "ON CONFLICT" in sql
+        assert params == (999, 11)
+        conn.commit.assert_called_once()
+
+    def test_remove_access_role_deletes(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.remove_access_role(999, 11)
+
+        sql, params = cursor.execute.call_args.args
+        assert "DELETE FROM soundboard_access" in sql
+        assert params == (999, 11)
+        conn.commit.assert_called_once()
