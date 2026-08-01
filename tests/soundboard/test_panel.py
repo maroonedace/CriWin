@@ -13,19 +13,24 @@ class TestBuildPanelViews:
     # discord.ui.View() needs a running event loop (it creates a Future), and
     # build_panel_views is only ever called from async code, so these are async.
     @pytest.mark.asyncio
-    async def test_chunks_into_25(self):
+    async def test_first_view_reserves_a_row_for_the_volume_select(self):
+        # 30 sounds: first message = 20 buttons + volume select (21), second = 10.
         views = panel.build_panel_views(_sounds(30))
         assert len(views) == 2
-        assert len(views[0].children) == 25
-        assert len(views[1].children) == 5
-
-    def test_empty_sounds_yields_no_views(self):
-        assert panel.build_panel_views([]) == []
+        assert len(views[0].children) == 21
+        assert len(views[1].children) == 10
 
     @pytest.mark.asyncio
-    async def test_button_custom_ids_encode_name(self):
+    async def test_empty_sounds_still_has_the_volume_select(self):
+        views = panel.build_panel_views([])
+        assert len(views) == 1
+        assert views[0].children[0].custom_id == "soundboard:volume"
+
+    @pytest.mark.asyncio
+    async def test_first_view_has_buttons_then_the_volume_select(self):
         views = panel.build_panel_views([{"name": "My Sound", "file_name": "x.mp3", "volume": 1.0}])
         assert views[0].children[0].custom_id == "soundboard:play:My Sound"
+        assert views[0].children[-1].custom_id == "soundboard:volume"
 
 
 class TestSoundButton:
