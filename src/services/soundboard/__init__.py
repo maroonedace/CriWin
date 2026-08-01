@@ -9,7 +9,6 @@ This package's public API is consumed by the soundboard command handlers under
 from src.services.soundboard.models import Sound
 from src.services.soundboard.service import (
     add_access_role,
-    autocomplete_sound_name,
     delete_sound,
     download_sound_file,
     get_access_role_ids,
@@ -25,7 +24,6 @@ from src.services.soundboard.service import (
 __all__ = [
     "Sound",
     "add_access_role",
-    "autocomplete_sound_name",
     "delete_sound",
     "download_sound_file",
     "get_access_role_ids",

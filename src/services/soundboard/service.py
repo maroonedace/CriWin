@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Any
 
-from discord import app_commands
-
 from src.config import Config
 from src.services import storage
 from src.services.processing import normalize_audio
@@ -95,16 +93,3 @@ def add_access_role(guild_id: int, role_id: int) -> None:
 def remove_access_role(guild_id: int, role_id: int) -> None:
     """Revoke a role's access to the soundboard panel."""
     DatabaseOperations.remove_access_role(guild_id, role_id)
-
-
-async def autocomplete_sound_name(current: str) -> list[app_commands.Choice[str]]:
-    """Generate autocomplete choices for sound names"""
-    try:
-        sounds = get_sounds()
-        filtered_sounds = [sound for sound in sounds if current.lower() in sound["name"].lower()]
-        return [
-            app_commands.Choice(name=sound["name"], value=sound["name"])
-            for sound in filtered_sounds[:25]  # Discord limit
-        ]
-    except Exception:
-        return []
