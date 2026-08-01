@@ -13,6 +13,7 @@ import discord
 from discord import Interaction
 
 from src.commands.soundboard.voice import play_sound
+from src.commands.soundboard.volume import VolumeSelect
 from src.services.soundboard import get_panel, get_sounds, save_panel
 
 logger = logging.getLogger(__name__)
@@ -47,26 +48,35 @@ class SoundButton(discord.ui.DynamicItem[discord.ui.Button], template=PLAY_TEMPL
         await play_sound(interaction, self.name)
 
 
-def _chunk(items: list, size: int):
-    for start in range(0, len(items), size):
-        yield items[start : start + size]
-
-
 def build_panel_views(sounds: list[dict]) -> list[discord.ui.View]:
-    """Build one persistent View (≤25 sound buttons) per chunk of sounds."""
+    """Build the panel's persistent views.
+
+    The first view carries the volume select, which occupies one of the five action
+    rows, so it holds up to 20 sound buttons; any further views hold up to 25. Always
+    returns at least one view (with the select) even when there are no sounds.
+    """
     views: list[discord.ui.View] = []
-    for chunk in _chunk(sounds, MAX_BUTTONS_PER_MESSAGE):
+    remaining = list(sounds)
+    first = True
+    while True:
         view = discord.ui.View(timeout=None)
-        for sound in chunk:
+        capacity = MAX_BUTTONS_PER_MESSAGE - 5 if first else MAX_BUTTONS_PER_MESSAGE
+        for sound in remaining[:capacity]:
             view.add_item(SoundButton(sound["name"]))
+        remaining = remaining[capacity:]
+        if first:
+            view.add_item(VolumeSelect())
+            first = False
         views.append(view)
+        if not remaining:
+            break
     return views
 
 
 async def _render(channel, existing_ids: list[int]) -> None:
     """Reconcile the panel messages in ``channel`` with the current soundboard."""
     sounds = get_sounds()
-    views: list[discord.ui.View | None] = build_panel_views(sounds) or [None]
+    views = build_panel_views(sounds)
     new_ids: list[int] = []
 
     for index, view in enumerate(views):

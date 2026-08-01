@@ -17,6 +17,7 @@ from src.commands.soundboard.constants import (
     UNAVAILABLE_SOUND_MESSAGE,
     VOICE_STATE_INVALID_MESSAGE,
 )
+from src.commands.soundboard.volume import resolve_volume
 from src.core.messaging import send_message
 from src.services.soundboard import download_sound_file, get_access_role_ids, get_sounds
 
@@ -126,7 +127,7 @@ async def play_sound(interaction: Interaction, sound_name: str) -> None:
             if vc.is_playing():
                 vc.stop()
 
-            volume = float(sound_entry.get("volume", 1.0))
+            volume = resolve_volume(member.id, float(sound_entry.get("volume", 1.0)))
             vc.play(
                 _build_source(file_path, volume),
                 after=lambda err: _on_playback_end(interaction.client, guild.id, err),
