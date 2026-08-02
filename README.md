@@ -168,6 +168,22 @@ then open `http://localhost:8080` and sign in with `ADMIN_USERNAME` / `ADMIN_PAS
 you can upload/delete sounds, set per-sound volume, and upload/replace the
 yt-dlp/gallery-dl cookies.
 
+Sounds belong to one server: pick it in the **Server** dropdown before uploading, and the
+sound list shows only that server's sounds. The dropdown is populated from the `guilds`
+table, which the bot fills in as it connects — so start the bot at least once before
+uploading. Display names only need to be unique within a server.
+
+### Migrating an existing database
+
+`init.sql` runs only when the database volume is created, so an existing deployment needs
+the newer statements applied by hand. After deploying the guild-scoped soundboard, run:
+
+```sql
+UPDATE sounds SET guild_id = <your GUILD_ID> WHERE guild_id = 0;
+```
+
+Sounds that predate guild scoping land in guild `0` and are invisible until this runs.
+
 ### Locally
 
 ```bash

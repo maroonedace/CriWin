@@ -58,9 +58,19 @@
       border-bottom: 1px solid var(--border);
       padding: 1rem 1.25rem;
     }
-    .app-bar-inner { max-width: 880px; margin: 0 auto; }
+    .app-bar-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      align-items: center;
+      justify-content: space-between;
+    }
     .app-bar h1 { margin: 0; font-size: 1.2rem; font-weight: 650; }
     .app-bar p { margin: .15rem 0 0; color: var(--muted); font-size: .85rem; }
+    .server-picker { display: inline-flex; gap: .5rem; align-items: center; margin: 0; }
+    .server-picker label { color: var(--muted); font-size: .85rem; }
 
     .container {
       max-width: 880px;
@@ -84,7 +94,7 @@
 
     .form-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
 
-    input:not([type=file]) {
+    input:not([type=file]), select {
       font: inherit;
       padding: .5rem .6rem;
       border: 1px solid var(--border);
@@ -92,7 +102,7 @@
       background: var(--surface);
       color: var(--text);
     }
-    input:not([type=file]):focus {
+    input:not([type=file]):focus, select:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-weak);
@@ -178,16 +188,43 @@
 <body>
   <header class="app-bar">
     <div class="app-bar-inner">
-      <h1>Criwin Admin</h1>
-      <p>Manage soundboard sounds and downloader cookies.</p>
+      <div>
+        <h1>Criwin Admin</h1>
+        <p>Manage soundboard sounds and downloader cookies.</p>
+      </div>
+      {% if guilds %}
+      <form class="server-picker" action="/" method="get">
+        <label for="guild-picker">Server</label>
+        <select id="guild-picker" name="guild_id" onchange="this.form.submit()">
+          {% for guild in guilds %}
+          <option value="{{ guild.guild_id }}" {% if guild.guild_id == selected_guild_id %}selected{% endif %}>
+            {{ guild.name }}
+          </option>
+          {% endfor %}
+        </select>
+        <noscript><button class="btn btn-secondary" type="submit">Switch</button></noscript>
+      </form>
+      {% endif %}
     </div>
   </header>
 
   <main class="container">
+    {% if selected_guild_id is none %}
+    <section class="card">
+      <div class="card-header"><h2>Sounds</h2></div>
+      <div class="card-body">
+        <p class="muted">
+          No servers yet. Start the bot and invite it to a server — sounds belong to the
+          server they are uploaded to.
+        </p>
+      </div>
+    </section>
+    {% else %}
     <section class="card">
       <div class="card-header"><h2>Add sound</h2></div>
       <div class="card-body">
         <form class="form-row" action="/sounds" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="guild_id" value="{{ selected_guild_id }}">
           <input name="name" placeholder="Display name" required>
           <input type="file" name="file" accept="audio/*" required>
           <button class="btn btn-primary" type="submit">Upload</button>
@@ -208,6 +245,7 @@
               <tr>
                 <td>
                   <form class="inline rename" action="/sounds/{{ sound.name | urlencode }}/rename" method="post">
+                    <input type="hidden" name="guild_id" value="{{ selected_guild_id }}">
                     <input name="new_name" value="{{ sound.name }}" required aria-label="Sound name">
                     <button class="btn btn-secondary" type="submit">Rename</button>
                   </form>
@@ -215,6 +253,7 @@
                 <td class="file">{{ sound.file_name }}</td>
                 <td>
                   <form class="inline" action="/sounds/{{ sound.name | urlencode }}/volume" method="post">
+                    <input type="hidden" name="guild_id" value="{{ selected_guild_id }}">
                     <input type="number" name="volume" step="0.1" min="0" max="2" value="{{ sound.volume }}" aria-label="Volume">
                     <button class="btn btn-secondary" type="submit">Set</button>
                   </form>
@@ -222,18 +261,20 @@
                 <td class="actions">
                   <form class="inline" action="/sounds/{{ sound.name | urlencode }}/delete" method="post"
                         onsubmit='return confirm("Delete " + {{ sound.name | tojson }} + "?")'>
+                    <input type="hidden" name="guild_id" value="{{ selected_guild_id }}">
                     <button class="btn btn-danger" type="submit">Delete</button>
                   </form>
                 </td>
               </tr>
             {% else %}
-              <tr><td class="empty" colspan="4">No sounds yet.</td></tr>
+              <tr><td class="empty" colspan="4">No sounds in this server yet.</td></tr>
             {% endfor %}
             </tbody>
           </table>
         </div>
       </div>
     </section>
+    {% endif %}
 
     <section class="card">
       <div class="card-header"><h2>Cookies</h2></div>
@@ -254,6 +295,9 @@
               {% endif %}
             </span>
             <form class="form-row" action="/cookies/{{ platform.name }}" method="post" enctype="multipart/form-data">
+              {% if selected_guild_id is not none %}
+              <input type="hidden" name="guild_id" value="{{ selected_guild_id }}">
+              {% endif %}
               <input type="file" name="file" accept=".txt" required aria-label="{{ platform.label }} cookie file">
               <button class="btn btn-primary" type="submit">{% if platform.is_set %}Replace{% else %}Upload{% endif %}</button>
             </form>

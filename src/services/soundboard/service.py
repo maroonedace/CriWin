@@ -13,12 +13,22 @@ def _object_key(file_name: str) -> str:
     return f"{Config.SOUNDBOARD_DIR}/{file_name}"
 
 
-def get_sounds() -> list[dict[str, Any]]:
-    """Get all sounds (cached or from database)"""
-    return DatabaseOperations.get_all_sounds()
+def _stored_file_name(guild_id: int, filename: str) -> str:
+    """Namespace an uploaded file name by guild.
+
+    Display names are only unique per guild, so two guilds can upload the same file
+    name; without this they would share (and overwrite) one object in storage.
+    """
+    return f"{guild_id}_{filename}"
+
+
+def get_sounds(guild_id: int) -> list[dict[str, Any]]:
+    """Get a guild's sounds from the database"""
+    return DatabaseOperations.get_all_sounds(guild_id)
 
 
 async def upload_sound_file(
+    guild_id: int,
     name: str,
     data: bytes,
     filename: str,
@@ -31,35 +41,36 @@ async def upload_sound_file(
     """
     try:
         normalized = normalize_audio(data, Path(filename).suffix)
+        stored_name = _stored_file_name(guild_id, filename)
         storage.put_bytes(
-            _object_key(filename), normalized, content_type or "application/octet-stream"
+            _object_key(stored_name), normalized, content_type or "application/octet-stream"
         )
-        DatabaseOperations.add_sound(name, filename)
+        DatabaseOperations.add_sound(guild_id, name, stored_name)
         SoundCache.invalidate()
     except Exception as e:
         raise ValueError(f"Could not upload sound file: {e}") from e
 
 
-async def delete_sound(name: str, file_name: str) -> None:
+async def delete_sound(guild_id: int, name: str, file_name: str) -> None:
     """Delete sound from object storage, database, and local cache"""
     try:
         storage.remove(_object_key(file_name))
-        DatabaseOperations.delete_sound(name)
+        DatabaseOperations.delete_sound(guild_id, name)
         FileOperations.delete_local_file(file_name)
         SoundCache.invalidate()
     except Exception as e:
         raise ValueError(f"Could not delete sound file: {e}") from e
 
 
-def set_volume(name: str, volume: float) -> None:
+def set_volume(guild_id: int, name: str, volume: float) -> None:
     """Update a sound's playback volume."""
-    DatabaseOperations.set_volume(name, volume)
+    DatabaseOperations.set_volume(guild_id, name, volume)
     SoundCache.invalidate()
 
 
-def rename_sound(old_name: str, new_name: str) -> None:
+def rename_sound(guild_id: int, old_name: str, new_name: str) -> None:
     """Rename a sound's display name (metadata only; the stored file is unchanged)."""
-    DatabaseOperations.rename_sound(old_name, new_name)
+    DatabaseOperations.rename_sound(guild_id, old_name, new_name)
     SoundCache.invalidate()
 
 

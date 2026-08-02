@@ -9,12 +9,15 @@ from src.services.soundboard.errors import ErrorMessages
 
 class DatabaseOperations:
     @staticmethod
-    def get_all_sounds() -> list[dict[str, Any]]:
-        """Get all sounds from database"""
+    def get_all_sounds(guild_id: int) -> list[dict[str, Any]]:
+        """Get a guild's sounds from database"""
         conn = get_database_connection()
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT name, file_name, volume FROM sounds ORDER BY name;")
+                cursor.execute(
+                    "SELECT name, file_name, volume FROM sounds WHERE guild_id = %s ORDER BY name;",
+                    (guild_id,),
+                )
                 sound_items = cursor.fetchall()
 
                 # Convert to list of dicts
@@ -27,13 +30,14 @@ class DatabaseOperations:
         return sound_items
 
     @staticmethod
-    def add_sound(name: str, file_name: str) -> None:
+    def add_sound(guild_id: int, name: str, file_name: str) -> None:
         """Add sound to database"""
         conn = get_database_connection()
         try:
             with conn.cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO sounds (name, file_name) VALUES (%s, %s);", (name, file_name)
+                    "INSERT INTO sounds (guild_id, name, file_name) VALUES (%s, %s, %s);",
+                    (guild_id, name, file_name),
                 )
                 conn.commit()
         except Exception as e:
@@ -41,36 +45,44 @@ class DatabaseOperations:
             raise ValueError(f"{ErrorMessages.UPLOAD_DATABASE}: {str(e)}") from e
 
     @staticmethod
-    def delete_sound(name: str) -> None:
+    def delete_sound(guild_id: int, name: str) -> None:
         """Delete sound from database"""
         conn = get_database_connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute("DELETE FROM sounds WHERE name = %s;", (name,))
+                cursor.execute(
+                    "DELETE FROM sounds WHERE guild_id = %s AND name = %s;", (guild_id, name)
+                )
                 conn.commit()
         except Exception as e:
             conn.rollback()
             raise ValueError(f"{ErrorMessages.DELETE_DATABASE}: {str(e)}") from e
 
     @staticmethod
-    def set_volume(name: str, volume: float) -> None:
+    def set_volume(guild_id: int, name: str, volume: float) -> None:
         """Update a sound's playback volume"""
         conn = get_database_connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute("UPDATE sounds SET volume = %s WHERE name = %s;", (volume, name))
+                cursor.execute(
+                    "UPDATE sounds SET volume = %s WHERE guild_id = %s AND name = %s;",
+                    (volume, guild_id, name),
+                )
                 conn.commit()
         except Exception as e:
             conn.rollback()
             raise ValueError(f"Could not update sound volume: {str(e)}") from e
 
     @staticmethod
-    def rename_sound(old_name: str, new_name: str) -> None:
+    def rename_sound(guild_id: int, old_name: str, new_name: str) -> None:
         """Rename a sound (updates the display name only, not the stored file)"""
         conn = get_database_connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute("UPDATE sounds SET name = %s WHERE name = %s;", (new_name, old_name))
+                cursor.execute(
+                    "UPDATE sounds SET name = %s WHERE guild_id = %s AND name = %s;",
+                    (new_name, guild_id, old_name),
+                )
                 conn.commit()
         except Exception as e:
             conn.rollback()

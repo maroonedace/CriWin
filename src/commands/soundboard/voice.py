@@ -100,11 +100,13 @@ async def play_sound(interaction: Interaction, sound_name: str) -> None:
         return
 
     try:
-        sounds = get_sounds()
+        sounds = get_sounds(interaction.guild.id)
     except ValueError as err:
         await send_message(interaction, str(err))
         return
 
+    # Scoped to this guild, so a button from another guild's panel (or a stale one
+    # for a deleted sound) finds nothing and reports the sound as unavailable.
     sound_entry = next((s for s in sounds if s["name"] == sound_name), None)
     if sound_entry is None:
         await send_message(interaction, UNAVAILABLE_SOUND_MESSAGE)

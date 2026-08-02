@@ -73,6 +73,25 @@ async def test_refresh_panel_edits_existing_and_saves():
 
 
 @pytest.mark.asyncio
+async def test_refresh_panel_renders_only_that_guilds_sounds():
+    channel = MagicMock(id=999)
+    channel.guild.id = 777
+    channel.fetch_message = AsyncMock()
+    channel.send = AsyncMock(return_value=MagicMock(id=1))
+    client = MagicMock()
+    client.get_channel.return_value = channel
+
+    with (
+        patch.object(panel, "get_panel", return_value={"channel_id": 999, "message_ids": []}),
+        patch.object(panel, "get_sounds", return_value=[]) as get_sounds,
+        patch.object(panel, "save_panel"),
+    ):
+        await panel.refresh_panel(client)
+
+    get_sounds.assert_called_once_with(777)
+
+
+@pytest.mark.asyncio
 async def test_refresh_panel_sends_additional_messages():
     sent = [MagicMock(id=1), MagicMock(id=2)]
     channel = MagicMock(id=999)

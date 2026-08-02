@@ -75,7 +75,7 @@ def build_panel_views(sounds: list[dict]) -> list[discord.ui.View]:
 
 async def _render(channel, existing_ids: list[int]) -> None:
     """Reconcile the panel messages in ``channel`` with the current soundboard."""
-    sounds = get_sounds()
+    sounds = get_sounds(channel.guild.id)
     views = build_panel_views(sounds)
     new_ids: list[int] = []
 
