@@ -13,6 +13,16 @@ services:
       - "127.0.0.1:9000:9000"   # S3 API
       - "127.0.0.1:9001:9001"   # MinIO console (browser)
 
+  # Mount the migrations so `make revision` writes the generated file to the host and
+  # editing one doesn't need an image rebuild.
+  migrate:
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ./src:/criwin/src
+      - ./alembic:/criwin/alembic
+      - ./alembic.ini:/criwin/alembic.ini
+
   app:
     environment:
       ENVIRONMENT: dev
