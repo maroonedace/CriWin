@@ -129,13 +129,16 @@ class TestDatabaseOperations:
         assert params == ("New", 999, "Old")
         conn.commit.assert_called_once()
 
-    def test_get_panel_returns_row(self):
+    def test_get_panel_returns_row_for_the_guild(self):
         conn, cursor = self._conn_with_cursor()
         cursor.fetchone.return_value = {"channel_id": 999, "message_ids": [1, 2]}
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_panel()
+            result = repo.DatabaseOperations.get_panel(777)
 
+        sql, params = cursor.execute.call_args.args
+        assert "FROM soundboard_panels WHERE guild_id = %s" in sql
+        assert params == (777,)
         assert result == {"channel_id": 999, "message_ids": [1, 2]}
 
     def test_get_panel_returns_none_when_absent(self):
@@ -143,18 +146,31 @@ class TestDatabaseOperations:
         cursor.fetchone.return_value = None
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            assert repo.DatabaseOperations.get_panel() is None
+            assert repo.DatabaseOperations.get_panel(777) is None
 
-    def test_save_panel_upserts(self):
+    def test_get_all_panels_returns_every_guild(self):
+        conn, cursor = self._conn_with_cursor()
+        cursor.fetchall.return_value = [
+            {"guild_id": 777, "channel_id": 999, "message_ids": [1]},
+            {"guild_id": 888, "channel_id": 111, "message_ids": []},
+        ]
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            result = repo.DatabaseOperations.get_all_panels()
+
+        assert "WHERE" not in cursor.execute.call_args.args[0]
+        assert [row["guild_id"] for row in result] == [777, 888]
+
+    def test_save_panel_upserts_per_guild(self):
         conn, cursor = self._conn_with_cursor()
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.save_panel(999, [1, 2, 3])
+            repo.DatabaseOperations.save_panel(777, 999, [1, 2, 3])
 
         sql, params = cursor.execute.call_args.args
-        assert "INSERT INTO soundboard_panel" in sql
-        assert "ON CONFLICT" in sql
-        assert params == (999, [1, 2, 3])
+        assert "INSERT INTO soundboard_panels" in sql
+        assert "ON CONFLICT (guild_id)" in sql
+        assert params == (777, 999, [1, 2, 3])
         conn.commit.assert_called_once()
 
     def test_get_guilds_returns_rows(self):

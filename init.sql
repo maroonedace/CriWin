@@ -19,14 +19,17 @@ ALTER TABLE sounds ADD COLUMN IF NOT EXISTS guild_id BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE sounds DROP CONSTRAINT IF EXISTS sounds_name_key;
 CREATE UNIQUE INDEX IF NOT EXISTS sounds_guild_name_key ON sounds (guild_id, name);
 
--- Tracks the soundboard button panel so the hourly sync can update its message(s).
--- Single row (id = 1); message_ids holds one Discord message id per panel message.
-CREATE TABLE IF NOT EXISTS soundboard_panel (
-    id INTEGER PRIMARY KEY DEFAULT 1,
+-- Tracks each guild's soundboard button panel so the hourly sync can update its
+-- message(s); message_ids holds one Discord message id per panel message. Replaces
+-- the old single-row soundboard_panel table, which let one guild's setup clobber
+-- another's — guilds with a panel there must re-run /soundboard-panel.
+DROP TABLE IF EXISTS soundboard_panel;
+
+CREATE TABLE IF NOT EXISTS soundboard_panels (
+    guild_id BIGINT PRIMARY KEY,
     channel_id BIGINT NOT NULL,
     message_ids BIGINT[] NOT NULL DEFAULT '{}',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT soundboard_panel_single_row CHECK (id = 1)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Guilds the bot is in, refreshed by the bot on ready/join. The admin web panel has

@@ -81,14 +81,19 @@ def download_sound_file(file_name: str) -> None:
     storage.fget(_object_key(file_name), dest)
 
 
-def get_panel() -> dict[str, Any] | None:
-    """Return the stored soundboard panel location (channel id + message ids), or None."""
-    return DatabaseOperations.get_panel()
+def get_panel(guild_id: int) -> dict[str, Any] | None:
+    """Return a guild's panel location (channel id + message ids), or None."""
+    return DatabaseOperations.get_panel(guild_id)
 
 
-def save_panel(channel_id: int, message_ids: list[int]) -> None:
-    """Persist the soundboard panel location (channel id + message ids)."""
-    DatabaseOperations.save_panel(channel_id, message_ids)
+def get_all_panels() -> list[dict[str, Any]]:
+    """Return every guild's panel location, for the periodic refresh."""
+    return DatabaseOperations.get_all_panels()
+
+
+def save_panel(guild_id: int, channel_id: int, message_ids: list[int]) -> None:
+    """Persist a guild's panel location (channel id + message ids)."""
+    DatabaseOperations.save_panel(guild_id, channel_id, message_ids)
 
 
 def get_guilds() -> list[dict[str, Any]]:

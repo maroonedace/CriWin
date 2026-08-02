@@ -184,6 +184,10 @@ UPDATE sounds SET guild_id = <your GUILD_ID> WHERE guild_id = 0;
 
 Sounds that predate guild scoping land in guild `0` and are invisible until this runs.
 
+The old single-row `soundboard_panel` table is replaced by per-guild `soundboard_panels`,
+so run `/soundboard-panel` again in each server to recreate its panel; the messages the
+old panel left behind are no longer tracked and can be deleted by hand.
+
 ### Locally
 
 ```bash
