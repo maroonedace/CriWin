@@ -1,6 +1,6 @@
 import logging
 
-from discord import Client, Intents, Message, Object, app_commands
+from discord import Client, Guild, Intents, Message, Object, app_commands
 from discord.ext import tasks
 
 from src.commands import setup_commands
@@ -8,6 +8,7 @@ from src.commands.soundboard.panel import SoundButton, refresh_panel
 from src.commands.soundboard.volume import VolumeSelect
 from src.config import Config
 from src.events import handle_dm_message
+from src.services.soundboard import upsert_guild
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,19 @@ async def sync_commands(tree: app_commands.CommandTree, guild: Object, is_dev: b
         tree.clear_commands(guild=guild)
         await tree.sync(guild=guild)
         await tree.sync()
+
+
+def record_guilds(guilds) -> None:
+    """Store the given guilds so the (token-less) admin panel can list them.
+
+    Best-effort: a database hiccup here must not take down startup or a join event,
+    since the registry is only used to populate the admin panel's server picker.
+    """
+    for guild in guilds:
+        try:
+            upsert_guild(guild.id, guild.name)
+        except Exception:
+            logger.exception("Could not record guild %s", guild.id)
 
 
 class DiscordBot(Client):
@@ -80,3 +94,11 @@ class DiscordBot(Client):
 
     async def on_ready(self):
         logger.info("Logged in as %s", self.user)
+        record_guilds(self.guilds)
+
+    async def on_guild_join(self, guild: Guild):
+        record_guilds([guild])
+
+    async def on_guild_update(self, before: Guild, after: Guild):
+        if before.name != after.name:
+            record_guilds([after])

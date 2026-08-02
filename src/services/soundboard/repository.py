@@ -112,6 +112,40 @@ class DatabaseOperations:
             raise ValueError(f"Could not save soundboard panel: {str(e)}") from e
 
     @staticmethod
+    def get_guilds() -> list[dict[str, Any]]:
+        """Return every guild the bot is known to be in, ordered by name."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute("SELECT guild_id, name FROM guilds ORDER BY name;")
+                rows = cursor.fetchall()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"{ErrorMessages.DATABASE}: {str(e)}") from e
+        return [dict(row) for row in rows]
+
+    @staticmethod
+    def upsert_guild(guild_id: int, name: str) -> None:
+        """Record a guild the bot is in, refreshing its name if it changed."""
+        conn = get_database_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO guilds (guild_id, name, updated_at)
+                    VALUES (%s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (guild_id) DO UPDATE
+                        SET name = EXCLUDED.name,
+                            updated_at = CURRENT_TIMESTAMP;
+                    """,
+                    (guild_id, name),
+                )
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise ValueError(f"Could not save guild: {str(e)}") from e
+
+    @staticmethod
     def get_access_role_ids(guild_id: int) -> list[int]:
         """Return the role ids allowed to use the panel in a guild (empty = open)."""
         conn = get_database_connection()

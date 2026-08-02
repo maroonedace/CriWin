@@ -12,6 +12,7 @@ from src.services.soundboard.service import (
     delete_sound,
     download_sound_file,
     get_access_role_ids,
+    get_guilds,
     get_panel,
     get_sounds,
     remove_access_role,
@@ -19,6 +20,7 @@ from src.services.soundboard.service import (
     save_panel,
     set_volume,
     upload_sound_file,
+    upsert_guild,
 )
 
 __all__ = [
@@ -27,6 +29,7 @@ __all__ = [
     "delete_sound",
     "download_sound_file",
     "get_access_role_ids",
+    "get_guilds",
     "get_panel",
     "get_sounds",
     "remove_access_role",
@@ -34,4 +37,5 @@ __all__ = [
     "save_panel",
     "set_volume",
     "upload_sound_file",
+    "upsert_guild",
 ]
