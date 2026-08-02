@@ -130,6 +130,27 @@ class TestDatabaseOperations:
         assert params == (999, [1, 2, 3])
         conn.commit.assert_called_once()
 
+    def test_get_guilds_returns_rows(self):
+        conn, cursor = self._conn_with_cursor()
+        cursor.fetchall.return_value = [{"guild_id": 1, "name": "A"}, {"guild_id": 2, "name": "B"}]
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            result = repo.DatabaseOperations.get_guilds()
+
+        assert result == [{"guild_id": 1, "name": "A"}, {"guild_id": 2, "name": "B"}]
+
+    def test_upsert_guild_refreshes_name(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.upsert_guild(999, "My Server")
+
+        sql, params = cursor.execute.call_args.args
+        assert "INSERT INTO guilds" in sql
+        assert "ON CONFLICT" in sql
+        assert params == (999, "My Server")
+        conn.commit.assert_called_once()
+
     def test_get_access_role_ids(self):
         conn, cursor = self._conn_with_cursor()
         cursor.fetchall.return_value = [(11,), (22,)]

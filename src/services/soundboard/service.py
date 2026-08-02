@@ -80,6 +80,16 @@ def save_panel(channel_id: int, message_ids: list[int]) -> None:
     DatabaseOperations.save_panel(channel_id, message_ids)
 
 
+def get_guilds() -> list[dict[str, Any]]:
+    """Return every guild the bot is in (guild_id + name), ordered by name."""
+    return DatabaseOperations.get_guilds()
+
+
+def upsert_guild(guild_id: int, name: str) -> None:
+    """Record a guild the bot is in, refreshing its name if it changed."""
+    DatabaseOperations.upsert_guild(guild_id, name)
+
+
 def get_access_role_ids(guild_id: int) -> list[int]:
     """Return the role ids allowed to use the soundboard panel in a guild."""
     return DatabaseOperations.get_access_role_ids(guild_id)
