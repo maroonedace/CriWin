@@ -67,48 +67,75 @@ class TestDatabaseOperations:
         conn.cursor.return_value.__enter__.return_value = cursor
         return conn, cursor
 
-    def test_get_all_sounds_selects_volume(self):
+    def test_get_all_sounds_selects_volume_for_one_guild(self):
         conn, cursor = self._conn_with_cursor()
         cursor.fetchall.return_value = [{"name": "a", "file_name": "a.mp3", "volume": 1.0}]
 
-        with (
-            patch("src.services.soundboard.repository.get_database_connection", return_value=conn),
-            patch.object(repo.SoundCache, "save"),
-        ):
-            result = repo.DatabaseOperations.get_all_sounds()
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            result = repo.DatabaseOperations.get_all_sounds(999)
 
-        assert "volume" in cursor.execute.call_args.args[0]
+        sql, params = cursor.execute.call_args.args
+        assert "volume" in sql
+        assert "WHERE guild_id = %s" in sql
+        assert params == (999,)
         assert result == [{"name": "a", "file_name": "a.mp3", "volume": 1.0}]
+
+    def test_add_sound_records_the_guild(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.add_sound(999, "My Sound", "999_boom.mp3")
+
+        sql, params = cursor.execute.call_args.args
+        assert "INSERT INTO sounds (guild_id, name, file_name)" in sql
+        assert params == (999, "My Sound", "999_boom.mp3")
+        conn.commit.assert_called_once()
+
+    def test_delete_sound_is_scoped_to_the_guild(self):
+        conn, cursor = self._conn_with_cursor()
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            repo.DatabaseOperations.delete_sound(999, "My Sound")
+
+        sql, params = cursor.execute.call_args.args
+        assert "DELETE FROM sounds WHERE guild_id = %s AND name = %s" in sql
+        assert params == (999, "My Sound")
+        conn.commit.assert_called_once()
 
     def test_set_volume_updates_row(self):
         conn, cursor = self._conn_with_cursor()
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.set_volume("My Sound", 0.5)
+            repo.DatabaseOperations.set_volume(999, "My Sound", 0.5)
 
         sql, params = cursor.execute.call_args.args
         assert "UPDATE sounds SET volume" in sql
-        assert params == (0.5, "My Sound")
+        assert "WHERE guild_id = %s AND name = %s" in sql
+        assert params == (0.5, 999, "My Sound")
         conn.commit.assert_called_once()
 
     def test_rename_updates_row(self):
         conn, cursor = self._conn_with_cursor()
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.rename_sound("Old", "New")
+            repo.DatabaseOperations.rename_sound(999, "Old", "New")
 
         sql, params = cursor.execute.call_args.args
         assert "UPDATE sounds SET name" in sql
-        assert params == ("New", "Old")
+        assert "WHERE guild_id = %s AND name = %s" in sql
+        assert params == ("New", 999, "Old")
         conn.commit.assert_called_once()
 
-    def test_get_panel_returns_row(self):
+    def test_get_panel_returns_row_for_the_guild(self):
         conn, cursor = self._conn_with_cursor()
         cursor.fetchone.return_value = {"channel_id": 999, "message_ids": [1, 2]}
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_panel()
+            result = repo.DatabaseOperations.get_panel(777)
 
+        sql, params = cursor.execute.call_args.args
+        assert "FROM soundboard_panels WHERE guild_id = %s" in sql
+        assert params == (777,)
         assert result == {"channel_id": 999, "message_ids": [1, 2]}
 
     def test_get_panel_returns_none_when_absent(self):
@@ -116,18 +143,31 @@ class TestDatabaseOperations:
         cursor.fetchone.return_value = None
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            assert repo.DatabaseOperations.get_panel() is None
+            assert repo.DatabaseOperations.get_panel(777) is None
 
-    def test_save_panel_upserts(self):
+    def test_get_all_panels_returns_every_guild(self):
+        conn, cursor = self._conn_with_cursor()
+        cursor.fetchall.return_value = [
+            {"guild_id": 777, "channel_id": 999, "message_ids": [1]},
+            {"guild_id": 888, "channel_id": 111, "message_ids": []},
+        ]
+
+        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
+            result = repo.DatabaseOperations.get_all_panels()
+
+        assert "WHERE" not in cursor.execute.call_args.args[0]
+        assert [row["guild_id"] for row in result] == [777, 888]
+
+    def test_save_panel_upserts_per_guild(self):
         conn, cursor = self._conn_with_cursor()
 
         with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.save_panel(999, [1, 2, 3])
+            repo.DatabaseOperations.save_panel(777, 999, [1, 2, 3])
 
         sql, params = cursor.execute.call_args.args
-        assert "INSERT INTO soundboard_panel" in sql
-        assert "ON CONFLICT" in sql
-        assert params == (999, [1, 2, 3])
+        assert "INSERT INTO soundboard_panels" in sql
+        assert "ON CONFLICT (guild_id)" in sql
+        assert params == (777, 999, [1, 2, 3])
         conn.commit.assert_called_once()
 
     def test_get_guilds_returns_rows(self):

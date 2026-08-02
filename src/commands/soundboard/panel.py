@@ -1,9 +1,10 @@
 """Soundboard button panel.
 
-A message of buttons (one per sound) posted in a channel. Buttons are persistent
-``DynamicItem``s (their handler is registered once at startup and survives restarts),
-so the panel keeps working across reboots and as sounds change. An hourly task rebuilds
-the message(s) from the current soundboard.
+A message of buttons (one per sound) posted in a channel, one panel per guild showing
+only that guild's sounds. Buttons are persistent ``DynamicItem``s (their handler is
+registered once at startup and survives restarts), so a panel keeps working across
+reboots and as sounds change. An hourly task rebuilds every panel's message(s) from
+its guild's soundboard.
 """
 
 import logging
@@ -14,7 +15,7 @@ from discord import Interaction
 
 from src.commands.soundboard.voice import play_sound
 from src.commands.soundboard.volume import VolumeSelect
-from src.services.soundboard import get_panel, get_sounds, save_panel
+from src.services.soundboard import get_all_panels, get_panel, get_sounds, save_panel
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ def build_panel_views(sounds: list[dict]) -> list[discord.ui.View]:
 
 async def _render(channel, existing_ids: list[int]) -> None:
     """Reconcile the panel messages in ``channel`` with the current soundboard."""
-    sounds = get_sounds()
+    sounds = get_sounds(channel.guild.id)
     views = build_panel_views(sounds)
     new_ids: list[int] = []
 
@@ -104,32 +105,40 @@ async def _render(channel, existing_ids: list[int]) -> None:
         except Exception:
             pass
 
-    save_panel(channel.id, new_ids)
+    save_panel(channel.guild.id, channel.id, new_ids)
+
+
+async def _resolve_channel(client, channel_id: int):
+    """Return the panel's channel, or None if it is gone."""
+    channel = client.get_channel(channel_id)
+    if channel is not None:
+        return channel
+    try:
+        return await client.fetch_channel(channel_id)
+    except Exception:
+        logger.warning("Soundboard panel channel %s not found", channel_id)
+        return None
 
 
 async def refresh_panel(client) -> None:
-    """Rebuild the panel from the current soundboard (hourly task / on boot)."""
-    panel = get_panel()
-    if not panel:
-        return
-
-    channel = client.get_channel(panel["channel_id"])
-    if channel is None:
+    """Rebuild every guild's panel from its soundboard (hourly task / on boot)."""
+    for panel in get_all_panels():
+        channel = await _resolve_channel(client, panel["channel_id"])
+        if channel is None:
+            continue
         try:
-            channel = await client.fetch_channel(panel["channel_id"])
+            await _render(channel, list(panel.get("message_ids") or []))
         except Exception:
-            logger.warning("Soundboard panel channel %s not found", panel["channel_id"])
-            return
-
-    await _render(channel, list(panel.get("message_ids") or []))
+            # One guild's panel failing must not stop the others from refreshing.
+            logger.exception("Could not refresh soundboard panel for guild %s", panel["guild_id"])
 
 
 async def handle_setup_panel(interaction: Interaction) -> None:
     """/soundboard-panel — (re)create the button panel in the current channel."""
     await interaction.response.defer(ephemeral=True)
 
-    # Best-effort removal of any previously-tracked panel messages.
-    panel = get_panel()
+    # Best-effort removal of this guild's previously-tracked panel messages.
+    panel = get_panel(interaction.guild.id)
     if panel:
         old_channel = interaction.client.get_channel(panel["channel_id"])
         if old_channel is not None:

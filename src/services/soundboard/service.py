@@ -4,7 +4,7 @@ from typing import Any
 from src.config import Config
 from src.services import storage
 from src.services.processing import normalize_audio
-from src.services.soundboard.cache import FileOperations, SoundCache
+from src.services.soundboard.cache import FileOperations
 from src.services.soundboard.repository import DatabaseOperations
 
 
@@ -13,12 +13,22 @@ def _object_key(file_name: str) -> str:
     return f"{Config.SOUNDBOARD_DIR}/{file_name}"
 
 
-def get_sounds() -> list[dict[str, Any]]:
-    """Get all sounds (cached or from database)"""
-    return DatabaseOperations.get_all_sounds()
+def _stored_file_name(guild_id: int, filename: str) -> str:
+    """Namespace an uploaded file name by guild.
+
+    Display names are only unique per guild, so two guilds can upload the same file
+    name; without this they would share (and overwrite) one object in storage.
+    """
+    return f"{guild_id}_{filename}"
+
+
+def get_sounds(guild_id: int) -> list[dict[str, Any]]:
+    """Get a guild's sounds from the database"""
+    return DatabaseOperations.get_all_sounds(guild_id)
 
 
 async def upload_sound_file(
+    guild_id: int,
     name: str,
     data: bytes,
     filename: str,
@@ -31,53 +41,55 @@ async def upload_sound_file(
     """
     try:
         normalized = normalize_audio(data, Path(filename).suffix)
+        stored_name = _stored_file_name(guild_id, filename)
         storage.put_bytes(
-            _object_key(filename), normalized, content_type or "application/octet-stream"
+            _object_key(stored_name), normalized, content_type or "application/octet-stream"
         )
-        DatabaseOperations.add_sound(name, filename)
-        SoundCache.invalidate()
+        DatabaseOperations.add_sound(guild_id, name, stored_name)
     except Exception as e:
         raise ValueError(f"Could not upload sound file: {e}") from e
 
 
-async def delete_sound(name: str, file_name: str) -> None:
+async def delete_sound(guild_id: int, name: str, file_name: str) -> None:
     """Delete sound from object storage, database, and local cache"""
     try:
         storage.remove(_object_key(file_name))
-        DatabaseOperations.delete_sound(name)
+        DatabaseOperations.delete_sound(guild_id, name)
         FileOperations.delete_local_file(file_name)
-        SoundCache.invalidate()
     except Exception as e:
         raise ValueError(f"Could not delete sound file: {e}") from e
 
 
-def set_volume(name: str, volume: float) -> None:
+def set_volume(guild_id: int, name: str, volume: float) -> None:
     """Update a sound's playback volume."""
-    DatabaseOperations.set_volume(name, volume)
-    SoundCache.invalidate()
+    DatabaseOperations.set_volume(guild_id, name, volume)
 
 
-def rename_sound(old_name: str, new_name: str) -> None:
+def rename_sound(guild_id: int, old_name: str, new_name: str) -> None:
     """Rename a sound's display name (metadata only; the stored file is unchanged)."""
-    DatabaseOperations.rename_sound(old_name, new_name)
-    SoundCache.invalidate()
+    DatabaseOperations.rename_sound(guild_id, old_name, new_name)
 
 
 def download_sound_file(file_name: str) -> None:
     """Download sound file from object storage to the local cache"""
-    SoundCache.ensure_cache_dir()
+    FileOperations.ensure_cache_dir()
     dest = Config.CACHE_DIR / "sounds" / file_name
     storage.fget(_object_key(file_name), dest)
 
 
-def get_panel() -> dict[str, Any] | None:
-    """Return the stored soundboard panel location (channel id + message ids), or None."""
-    return DatabaseOperations.get_panel()
+def get_panel(guild_id: int) -> dict[str, Any] | None:
+    """Return a guild's panel location (channel id + message ids), or None."""
+    return DatabaseOperations.get_panel(guild_id)
 
 
-def save_panel(channel_id: int, message_ids: list[int]) -> None:
-    """Persist the soundboard panel location (channel id + message ids)."""
-    DatabaseOperations.save_panel(channel_id, message_ids)
+def get_all_panels() -> list[dict[str, Any]]:
+    """Return every guild's panel location, for the periodic refresh."""
+    return DatabaseOperations.get_all_panels()
+
+
+def save_panel(guild_id: int, channel_id: int, message_ids: list[int]) -> None:
+    """Persist a guild's panel location (channel id + message ids)."""
+    DatabaseOperations.save_panel(guild_id, channel_id, message_ids)
 
 
 def get_guilds() -> list[dict[str, Any]]:

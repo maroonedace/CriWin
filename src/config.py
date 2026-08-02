@@ -47,11 +47,8 @@ class Config:
     DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR", "/criwin/downloads")
     COOKIE_DIR = os.getenv("COOKIE_DIR", "/criwin/cookies")
 
-    # Soundboard cache (local filesystem)
+    # Soundboard audio-file cache (local filesystem)
     CACHE_DIR = Path("cache")
-    CACHE_FILE = CACHE_DIR / "sounds_cache.json"
-    CACHE_TIMESTAMP_FILE = CACHE_DIR / "sounds_cache_timestamp.txt"
-    CACHE_EXPIRY_SECONDS = 300  # 5 minutes
 
     # Object-storage key prefix for soundboard files
     SOUNDBOARD_DIR = "soundboard"
