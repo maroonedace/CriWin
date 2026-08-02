@@ -3,7 +3,6 @@ from typing import Any
 from psycopg2.extras import RealDictCursor
 
 from src.services.db import get_database_connection
-from src.services.soundboard.cache import SoundCache
 from src.services.soundboard.errors import ErrorMessages
 
 
@@ -26,7 +25,6 @@ class DatabaseOperations:
             conn.rollback()
             raise ValueError(f"{ErrorMessages.DATABASE}: {str(e)}") from e
 
-        SoundCache.save(sound_items)
         return sound_items
 
     @staticmethod
