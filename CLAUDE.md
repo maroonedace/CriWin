@@ -1,4 +1,3 @@
-Claude · MD
 # CLAUDE.md
  
 ## Communication style (applies to every response)
@@ -9,7 +8,7 @@ Claude · MD
 - When you are not fully certain of something, say so plainly and label the uncertainty. Do not present a guess as a fact.
 ## Ticket breakdown
  
-This project includes a `/breakdown` skill at `.claude/skills/breakdown/SKILL.md` for turning an engineering scope (a bug fix, a refactor, or a new feature) into Jira-style tickets. It is a guided, learn-by-doing workflow: I attempt each step and you coach me. When I run `/breakdown`, follow that skill exactly. Do not do the breakdown work for me. Wait for me to attempt each step, and wait for me to ask for a `review`, a `hint`, or an `explain`.
+This project includes a `/breakdown` skill at `.claude/skills/breakdown/SKILL.md` for turning an engineering scope (a bug fix, a refactor, or a new feature) into Jira-style tickets. It is a guided workflow: I attempt some stages myself and you produce others, and it never advances a stage until I say `next`. When I run `/breakdown`, follow that skill exactly.
  
 ## Note on scope
  
