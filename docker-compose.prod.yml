@@ -18,5 +18,8 @@ services:
   storage:
     logging: *prod-logging
 
+  migrate:
+    logging: *prod-logging
+
   admin:
     logging: *prod-logging

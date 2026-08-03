@@ -21,5 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY main.py .
 
+# Database migrations. WORKDIR is the repo root, so `alembic upgrade head` needs no -c.
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+
 # Command to run application
 CMD ["python", "main.py"]

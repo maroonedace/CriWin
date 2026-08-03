@@ -1,12 +1,11 @@
 """Soundboard service.
 
 Postgres metadata + object-storage audio + local filesystem cache, split into
-cohesive modules (models / errors / repository / storage / cache / service).
-This package's public API is consumed by the soundboard command handlers under
+cohesive modules (errors / repository / storage / cache / service). This package's
+public API is consumed by the soundboard command handlers under
 ``src/commands/soundboard``.
 """
 
-from src.services.soundboard.models import Sound
 from src.services.soundboard.service import (
     add_access_role,
     delete_sound,
@@ -25,7 +24,6 @@ from src.services.soundboard.service import (
 )
 
 __all__ = [
-    "Sound",
     "add_access_role",
     "delete_sound",
     "download_sound_file",

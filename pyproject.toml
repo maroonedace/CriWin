@@ -6,6 +6,11 @@ line-length = 100
 # errors, pyflakes, import-sorting, warnings, pyupgrade, flake8-bugbear
 select = ["E", "F", "I", "W", "UP", "B"]
 
+[tool.ruff.lint.isort]
+# The migration scripts live in ./alembic, which otherwise makes isort read the
+# installed `alembic` library as first-party and sort its imports alongside `src`.
+known-third-party = ["alembic"]
+
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI dependency-injection helpers are meant to be called in defaults (B008).
 extend-immutable-calls = [

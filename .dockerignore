@@ -1,4 +1,5 @@
-# Keep the build context small — the Dockerfile only needs requirements.txt, src/, main.py.
+# Keep the build context small — the Dockerfile only needs requirements.txt, src/,
+# main.py, and the alembic/ migrations plus alembic.ini.
 .git/
 .venv/
 __pycache__/

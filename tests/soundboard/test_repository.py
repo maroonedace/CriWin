@@ -1,224 +1,240 @@
-"""Covers the shared Postgres connection (src.services.db), which the soundboard
-repository now depends on."""
+"""Covers the soundboard repository against a real Postgres database.
 
-from unittest.mock import MagicMock, patch
+Every test here runs the statements SQLAlchemy actually builds, so it catches the
+things a mocked Session cannot: server defaults firing, ON CONFLICT resolving,
+Postgres arrays round-tripping, and the dict shapes the admin panel subscripts.
+"""
 
 import pytest
+from sqlalchemy import text
 
 import src.services.db as db
 import src.services.soundboard.repository as repo
 from src.config import Config
 
+Operations = repo.DatabaseOperations
 
-@pytest.fixture(autouse=True)
-def _reset_connection_singleton():
-    db._connection = None
-    yield
-    db._connection = None
+pytestmark = pytest.mark.usefixtures("db")
 
 
-def test_get_database_connection_passes_config():
-    fake_conn = MagicMock()
-    fake_conn.closed = False
-
-    with patch("src.services.db.psycopg2.connect", return_value=fake_conn) as mock_connect:
-        conn = db.get_database_connection()
-
-    assert conn is fake_conn
-    mock_connect.assert_called_once_with(
-        host=Config.DB_HOST,
-        port=Config.DB_PORT,
-        database=Config.DB_NAME,
-        user=Config.DB_USER,
-        password=Config.DB_PASSWORD,
-        connect_timeout=10,
-    )
+def _seed(db_engine, statement: str, **params) -> None:
+    with db_engine.begin() as connection:
+        connection.execute(text(statement), params)
 
 
-def test_get_database_connection_is_cached():
-    fake_conn = MagicMock()
-    fake_conn.closed = False
+class TestDatabaseUrl:
+    def test_escapes_special_characters_in_password(self, monkeypatch):
+        """A password with URL metacharacters must survive intact.
 
-    with patch("src.services.db.psycopg2.connect", return_value=fake_conn) as mock_connect:
-        db.get_database_connection()
-        db.get_database_connection()
+        Concatenating the URL by hand breaks here: '@' would end the userinfo
+        section early and point the driver at the wrong host.
+        """
+        monkeypatch.setattr(Config, "DB_USER", "criwin")
+        monkeypatch.setattr(Config, "DB_PASSWORD", "p@ss/w%rd")
+        monkeypatch.setattr(Config, "DB_HOST", "db")
+        monkeypatch.setattr(Config, "DB_PORT", 5432)
+        monkeypatch.setattr(Config, "DB_NAME", "criwin")
 
-    mock_connect.assert_called_once()
+        url = db.database_url()
 
-
-def test_get_database_connection_reconnects_when_closed():
-    closed_conn = MagicMock()
-    closed_conn.closed = True
-    fresh_conn = MagicMock()
-    fresh_conn.closed = False
-    db._connection = closed_conn
-
-    with patch("src.services.db.psycopg2.connect", return_value=fresh_conn) as mock_connect:
-        conn = db.get_database_connection()
-
-    assert conn is fresh_conn
-    mock_connect.assert_called_once()
+        assert url.password == "p@ss/w%rd"
+        assert url.host == "db"
+        assert url.database == "criwin"
+        assert "p@ss/w%rd" not in url.render_as_string(hide_password=False).split("@")[-1]
 
 
-class TestDatabaseOperations:
-    def _conn_with_cursor(self):
-        conn = MagicMock()
-        cursor = MagicMock()
-        conn.cursor.return_value.__enter__.return_value = cursor
-        return conn, cursor
+class TestSounds:
+    def test_get_all_sounds_returns_the_shape_callers_subscript(self, db):
+        _seed(
+            db,
+            "INSERT INTO sounds (guild_id, name, file_name, volume) "
+            "VALUES (999, 'Boom', '999_boom.mp3', 0.5)",
+        )
 
-    def test_get_all_sounds_selects_volume_for_one_guild(self):
-        conn, cursor = self._conn_with_cursor()
-        cursor.fetchall.return_value = [{"name": "a", "file_name": "a.mp3", "volume": 1.0}]
+        result = Operations.get_all_sounds(999)
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_all_sounds(999)
+        assert result == [{"name": "Boom", "file_name": "999_boom.mp3", "volume": 0.5}]
+        assert isinstance(result[0]["volume"], float)
 
-        sql, params = cursor.execute.call_args.args
-        assert "volume" in sql
-        assert "WHERE guild_id = %s" in sql
-        assert params == (999,)
-        assert result == [{"name": "a", "file_name": "a.mp3", "volume": 1.0}]
+    def test_get_all_sounds_is_scoped_to_one_guild(self, db):
+        _seed(db, "INSERT INTO sounds (guild_id, name, file_name) VALUES (999, 'Mine', 'a.mp3')")
+        _seed(db, "INSERT INTO sounds (guild_id, name, file_name) VALUES (111, 'Theirs', 'b.mp3')")
 
-    def test_add_sound_records_the_guild(self):
-        conn, cursor = self._conn_with_cursor()
+        assert [sound["name"] for sound in Operations.get_all_sounds(999)] == ["Mine"]
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.add_sound(999, "My Sound", "999_boom.mp3")
+    def test_get_all_sounds_orders_by_name(self, db):
+        _seed(db, "INSERT INTO sounds (guild_id, name, file_name) VALUES (999, 'Zebra', 'z.mp3')")
+        _seed(db, "INSERT INTO sounds (guild_id, name, file_name) VALUES (999, 'Apple', 'a.mp3')")
 
-        sql, params = cursor.execute.call_args.args
-        assert "INSERT INTO sounds (guild_id, name, file_name)" in sql
-        assert params == (999, "My Sound", "999_boom.mp3")
-        conn.commit.assert_called_once()
+        assert [sound["name"] for sound in Operations.get_all_sounds(999)] == ["Apple", "Zebra"]
 
-    def test_delete_sound_is_scoped_to_the_guild(self):
-        conn, cursor = self._conn_with_cursor()
+    def test_get_all_sounds_is_empty_for_an_unknown_guild(self, db):
+        assert Operations.get_all_sounds(999) == []
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.delete_sound(999, "My Sound")
+    def test_add_sound_records_the_guild(self, db):
+        Operations.add_sound(999, "My Sound", "999_boom.mp3")
 
-        sql, params = cursor.execute.call_args.args
-        assert "DELETE FROM sounds WHERE guild_id = %s AND name = %s" in sql
-        assert params == (999, "My Sound")
-        conn.commit.assert_called_once()
-
-    def test_set_volume_updates_row(self):
-        conn, cursor = self._conn_with_cursor()
-
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.set_volume(999, "My Sound", 0.5)
-
-        sql, params = cursor.execute.call_args.args
-        assert "UPDATE sounds SET volume" in sql
-        assert "WHERE guild_id = %s AND name = %s" in sql
-        assert params == (0.5, 999, "My Sound")
-        conn.commit.assert_called_once()
-
-    def test_rename_updates_row(self):
-        conn, cursor = self._conn_with_cursor()
-
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.rename_sound(999, "Old", "New")
-
-        sql, params = cursor.execute.call_args.args
-        assert "UPDATE sounds SET name" in sql
-        assert "WHERE guild_id = %s AND name = %s" in sql
-        assert params == ("New", 999, "Old")
-        conn.commit.assert_called_once()
-
-    def test_get_panel_returns_row_for_the_guild(self):
-        conn, cursor = self._conn_with_cursor()
-        cursor.fetchone.return_value = {"channel_id": 999, "message_ids": [1, 2]}
-
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_panel(777)
-
-        sql, params = cursor.execute.call_args.args
-        assert "FROM soundboard_panels WHERE guild_id = %s" in sql
-        assert params == (777,)
-        assert result == {"channel_id": 999, "message_ids": [1, 2]}
-
-    def test_get_panel_returns_none_when_absent(self):
-        conn, cursor = self._conn_with_cursor()
-        cursor.fetchone.return_value = None
-
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            assert repo.DatabaseOperations.get_panel(777) is None
-
-    def test_get_all_panels_returns_every_guild(self):
-        conn, cursor = self._conn_with_cursor()
-        cursor.fetchall.return_value = [
-            {"guild_id": 777, "channel_id": 999, "message_ids": [1]},
-            {"guild_id": 888, "channel_id": 111, "message_ids": []},
+        assert Operations.get_all_sounds(999) == [
+            {"name": "My Sound", "file_name": "999_boom.mp3", "volume": 1.0}
         ]
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_all_panels()
+    def test_add_sound_fills_in_the_server_defaults(self, db):
+        """add_sound omits volume and created_at, so the columns' defaults must fire.
 
-        assert "WHERE" not in cursor.execute.call_args.args[0]
-        assert [row["guild_id"] for row in result] == [777, 888]
+        Dropping either server_default from the model would only break a freshly
+        created database -- every existing one already carries the default -- so this
+        is the guard against that going unnoticed.
+        """
+        Operations.add_sound(999, "My Sound", "999_boom.mp3")
 
-    def test_save_panel_upserts_per_guild(self):
-        conn, cursor = self._conn_with_cursor()
+        with db.begin() as connection:
+            volume, created_at = connection.execute(
+                text("SELECT volume, created_at FROM sounds WHERE name = 'My Sound'")
+            ).one()
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.save_panel(777, 999, [1, 2, 3])
+        assert volume == 1.0
+        assert created_at is not None
 
-        sql, params = cursor.execute.call_args.args
-        assert "INSERT INTO soundboard_panels" in sql
-        assert "ON CONFLICT (guild_id)" in sql
-        assert params == (777, 999, [1, 2, 3])
-        conn.commit.assert_called_once()
+    def test_add_sound_rejects_a_duplicate_name_within_a_guild(self, db):
+        Operations.add_sound(999, "My Sound", "a.mp3")
 
-    def test_get_guilds_returns_rows(self):
-        conn, cursor = self._conn_with_cursor()
-        cursor.fetchall.return_value = [{"guild_id": 1, "name": "A"}, {"guild_id": 2, "name": "B"}]
+        with pytest.raises(ValueError):
+            Operations.add_sound(999, "My Sound", "b.mp3")
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_guilds()
+    def test_add_sound_allows_the_same_name_in_another_guild(self, db):
+        Operations.add_sound(999, "My Sound", "999_a.mp3")
+        Operations.add_sound(111, "My Sound", "111_a.mp3")
 
-        assert result == [{"guild_id": 1, "name": "A"}, {"guild_id": 2, "name": "B"}]
+        assert len(Operations.get_all_sounds(999)) == 1
+        assert len(Operations.get_all_sounds(111)) == 1
 
-    def test_upsert_guild_refreshes_name(self):
-        conn, cursor = self._conn_with_cursor()
+    def test_delete_sound_is_scoped_to_the_guild(self, db):
+        Operations.add_sound(999, "My Sound", "999_a.mp3")
+        Operations.add_sound(111, "My Sound", "111_a.mp3")
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.upsert_guild(999, "My Server")
+        Operations.delete_sound(999, "My Sound")
 
-        sql, params = cursor.execute.call_args.args
-        assert "INSERT INTO guilds" in sql
-        assert "ON CONFLICT" in sql
-        assert params == (999, "My Server")
-        conn.commit.assert_called_once()
+        assert Operations.get_all_sounds(999) == []
+        assert len(Operations.get_all_sounds(111)) == 1
 
-    def test_get_access_role_ids(self):
-        conn, cursor = self._conn_with_cursor()
-        cursor.fetchall.return_value = [(11,), (22,)]
+    def test_set_volume_updates_the_row(self, db):
+        Operations.add_sound(999, "My Sound", "a.mp3")
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            result = repo.DatabaseOperations.get_access_role_ids(999)
+        Operations.set_volume(999, "My Sound", 0.5)
 
-        assert result == [11, 22]
+        assert Operations.get_all_sounds(999)[0]["volume"] == 0.5
 
-    def test_add_access_role_upserts(self):
-        conn, cursor = self._conn_with_cursor()
+    def test_set_volume_is_scoped_to_the_guild(self, db):
+        Operations.add_sound(999, "My Sound", "999_a.mp3")
+        Operations.add_sound(111, "My Sound", "111_a.mp3")
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.add_access_role(999, 11)
+        Operations.set_volume(999, "My Sound", 0.5)
 
-        sql, params = cursor.execute.call_args.args
-        assert "INSERT INTO soundboard_access" in sql
-        assert "ON CONFLICT" in sql
-        assert params == (999, 11)
-        conn.commit.assert_called_once()
+        assert Operations.get_all_sounds(111)[0]["volume"] == 1.0
 
-    def test_remove_access_role_deletes(self):
-        conn, cursor = self._conn_with_cursor()
+    def test_rename_updates_the_display_name_only(self, db):
+        Operations.add_sound(999, "Old", "999_a.mp3")
 
-        with patch("src.services.soundboard.repository.get_database_connection", return_value=conn):
-            repo.DatabaseOperations.remove_access_role(999, 11)
+        Operations.rename_sound(999, "Old", "New")
 
-        sql, params = cursor.execute.call_args.args
-        assert "DELETE FROM soundboard_access" in sql
-        assert params == (999, 11)
-        conn.commit.assert_called_once()
+        assert Operations.get_all_sounds(999) == [
+            {"name": "New", "file_name": "999_a.mp3", "volume": 1.0}
+        ]
+
+
+class TestPanels:
+    def test_get_panel_returns_the_row_for_the_guild(self, db):
+        Operations.save_panel(777, 999, [1, 2])
+
+        assert Operations.get_panel(777) == {"channel_id": 999, "message_ids": [1, 2]}
+
+    def test_get_panel_returns_none_when_absent(self, db):
+        assert Operations.get_panel(777) is None
+
+    def test_save_panel_upserts_rather_than_duplicating(self, db):
+        Operations.save_panel(777, 999, [1, 2])
+        Operations.save_panel(777, 888, [3])
+
+        assert Operations.get_panel(777) == {"channel_id": 888, "message_ids": [3]}
+        assert len(Operations.get_all_panels()) == 1
+
+    def test_save_panel_round_trips_discord_sized_message_ids(self, db):
+        """Snowflake ids exceed 32 bits, so the array has to be BIGINT[]."""
+        message_ids = [1234567890123456789, 1420070400000000000]
+
+        Operations.save_panel(777, 999, message_ids)
+
+        assert Operations.get_panel(777)["message_ids"] == message_ids
+
+    def test_save_panel_accepts_an_empty_message_list(self, db):
+        Operations.save_panel(777, 999, [])
+
+        assert Operations.get_panel(777)["message_ids"] == []
+
+    def test_get_all_panels_returns_every_guild(self, db):
+        Operations.save_panel(777, 999, [1])
+        Operations.save_panel(888, 111, [])
+
+        result = Operations.get_all_panels()
+
+        assert sorted(row["guild_id"] for row in result) == [777, 888]
+        assert set(result[0]) == {"guild_id", "channel_id", "message_ids"}
+
+
+class TestGuilds:
+    def test_get_guilds_orders_by_name(self, db):
+        Operations.upsert_guild(2, "Beta")
+        Operations.upsert_guild(1, "Alpha")
+
+        assert Operations.get_guilds() == [
+            {"guild_id": 1, "name": "Alpha"},
+            {"guild_id": 2, "name": "Beta"},
+        ]
+
+    def test_upsert_guild_refreshes_the_name(self, db):
+        Operations.upsert_guild(999, "Old Name")
+        Operations.upsert_guild(999, "New Name")
+
+        assert Operations.get_guilds() == [{"guild_id": 999, "name": "New Name"}]
+
+    def test_upsert_guild_bumps_updated_at(self, db):
+        Operations.upsert_guild(999, "My Server")
+        with db.begin() as connection:
+            first = connection.execute(text("SELECT updated_at FROM guilds")).scalar_one()
+
+        Operations.upsert_guild(999, "My Server")
+        with db.begin() as connection:
+            second = connection.execute(text("SELECT updated_at FROM guilds")).scalar_one()
+
+        assert second >= first
+
+
+class TestAccessRoles:
+    def test_get_access_role_ids_is_empty_by_default(self, db):
+        assert Operations.get_access_role_ids(999) == []
+
+    def test_add_and_get_access_roles(self, db):
+        Operations.add_access_role(999, 11)
+        Operations.add_access_role(999, 22)
+
+        assert sorted(Operations.get_access_role_ids(999)) == [11, 22]
+
+    def test_add_access_role_is_idempotent(self, db):
+        Operations.add_access_role(999, 11)
+        Operations.add_access_role(999, 11)
+
+        assert Operations.get_access_role_ids(999) == [11]
+
+    def test_access_roles_are_scoped_to_the_guild(self, db):
+        Operations.add_access_role(999, 11)
+        Operations.add_access_role(111, 22)
+
+        assert Operations.get_access_role_ids(999) == [11]
+
+    def test_remove_access_role_deletes_only_that_pair(self, db):
+        Operations.add_access_role(999, 11)
+        Operations.add_access_role(999, 22)
+
+        Operations.remove_access_role(999, 11)
+
+        assert Operations.get_access_role_ids(999) == [22]
