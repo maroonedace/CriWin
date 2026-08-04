@@ -1,21 +1,50 @@
-from dotenv import load_dotenv
+import logging
 import os
+import sys
 
-from bot.constants import ENVIRONMENTS
+from dotenv import load_dotenv
+
+from bot.constants import (
+    ENVIRONMENTS,
+    INVALID_ENVIRONMENT,
+    MISSING_DEV_GUILD_ID,
+    MISSING_TOKEN,
+    NON_NUMERIC_DEV_GUILD_ID,
+    CONFIG_VALIDATED,
+)
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 class Config:
-    ENVIRONMENT = os.getenv("ENVIRONMENT")
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "").lower()
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     DEV_GUILD_ID = os.getenv("DEV_GUILD_ID")
 
-    if ENVIRONMENT not in ENVIRONMENTS:
-        raise ValueError(
-            f"ENVIRONMENT must be one of {ENVIRONMENTS}, got {ENVIRONMENT!r}"
-        )
-    if not DISCORD_TOKEN:
-        raise ValueError("DISCORD_TOKEN is not set")
+def validate_config() -> str:
+    """Validate required configuration, exiting the process if it is missing.
 
-    if ENVIRONMENT == "development" and not DEV_GUILD_ID:
-        raise ValueError("DEV_GUILD_ID is required when ENVIRONMENT=development")
+    Returns the validated Discord token.
+    """
+
+    if not Config.DISCORD_TOKEN:
+        logger.critical(MISSING_TOKEN)
+        sys.exit(1)
+
+    if Config.ENVIRONMENT not in ENVIRONMENTS:
+        logger.critical(INVALID_ENVIRONMENT, ENVIRONMENTS, Config.ENVIRONMENT)
+        sys.exit(1)
+
+    if Config.ENVIRONMENT == "development":
+        if not Config.DEV_GUILD_ID:
+            logger.critical(MISSING_DEV_GUILD_ID)
+            sys.exit(1)
+        try:
+            int(Config.DEV_GUILD_ID)
+        except ValueError:
+            logger.critical(NON_NUMERIC_DEV_GUILD_ID, Config.DEV_GUILD_ID)
+            sys.exit(1)
+
+    logger.info(CONFIG_VALIDATED, Config.ENVIRONMENT)
+    return Config.DISCORD_TOKEN

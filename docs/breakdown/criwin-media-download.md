@@ -7,6 +7,7 @@ Supersedes tickets 1 and 2 of `criwin-discord-bot.md`, which shipped as KAN-1 an
 the `discord-bot-bootstrap.md` plan. This breakdown covers all remaining work.
 
 ## Stages
+
 - [x] 1. Frame the scope
 - [x] 2. Group into a theme
 - [x] 3. Decompose into tickets
@@ -32,51 +33,59 @@ a time-limited download link when it does not.
 #### In scope
 
 **The download feature**
+
 - A slash command that accepts a URL from Instagram, YouTube, Reddit, or TikTok.
 - Video and image posts, including multi-image posts (Instagram carousels, Reddit galleries).
 - Delivery via ephemeral response, visible only to the requester.
 - Media larger than 50 MB is rejected. Below that, the bot attaches the file directly when it
-  fits within the guild's Discord attachment limit, read at runtime from the guild's boost tier,
-  and otherwise stores it in MinIO and returns a presigned URL.
+fits within the guild's Discord attachment limit, read at runtime from the guild's boost tier,
+and otherwise stores it in MinIO and returns a presigned URL.
 - One download in flight per user. A second request is refused until the first completes.
 
 **Storage and data**
+
 - MinIO for media objects. Objects are deleted after 24 hours, and presigned URLs expire at
-  24 hours so the two clocks match.
+24 hours so the two clocks match.
 - PostgreSQL as the datastore, accessed through an ORM with managed migrations.
 
 **Platform**
+
 - Multi-guild support. One deployment serves many Discord servers.
 - Separate development and production bot applications. Development registers commands per
-  guild for instant updates. Production registers globally and accepts Discord's propagation
-  delay of up to an hour.
+guild for instant updates. Production registers globally and accepts Discord's propagation
+delay of up to an hour.
 - Cookie files for extractor authentication, stored globally rather than per guild.
 
 **Delivery and quality**
+
 - Docker containers for every component, with all required images available.
 - pytest coverage over the implemented features to guard against regressions.
 - A Makefile for common commands.
 - A README explaining the bot's purpose.
 - Python 3.12.
 
+
+
 #### Out of scope
 
 - **The soundboard feature in its entirety.** Deferred to a later sprint. This includes voice
-  channel playback, the sound panel, per-sound volume, bot clones, and the admin screens for
-  creating, updating, and deleting sounds.
+channel playback, the sound panel, per-sound volume, bot clones, and the admin screens for
+creating, updating, and deleting sounds.
 - **Batch and playlist downloads.** One URL, one job.
 - **Transcoding or compressing media** to fit under an attachment limit. Oversized media is
-  rejected or linked, never re-encoded.
+rejected or linked, never re-encoded.
 - **Audio-only extraction.** Possible later.
 - **Download history and re-download.** Objects expire and are gone.
 - **An IAM-style role model.** The guild-scoped regular admin role is deferred. The schema should
-  not preclude adding it, but nothing is built for it now.
+not preclude adding it, but nothing is built for it now.
 - **Per-guild cookie files.**
 - **The admin portal.** *(Amended at Stage 2. It was listed in scope at Stage 1, limited to cookie
-  file upload and gated to a single super admin.)* Deferred to its own breakdown. Cookie rotation
-  is served by a `make load-cookies` target run on the host, so the portal was the only admitted
-  item whose removal did not break the goal, while it would have added a web framework, an
-  authentication surface, an externally reachable port, and a second container image.
+file upload and gated to a single super admin.)* Deferred to its own breakdown. Cookie rotation
+is served by a `make load-cookies` target run on the host, so the portal was the only admitted
+item whose removal did not break the goal, while it would have added a web framework, an
+authentication surface, an externally reachable port, and a second container image.
+
+
 
 #### Constraints
 
@@ -115,26 +124,32 @@ and no linter.
 2. **ORM.** SQLAlchemy and Alembic remain fixed.
 3. **Structure.** The scope must revolve around the bot structure.
 
+
+
 #### Carried into Stage 2 unresolved
 
 - **What "revolve around the bot structure" means.** Either the existing `bot/` layout is a
-  constraint that new work conforms to, or the structure is itself a subject this scope may
-  reshape. Stage 2's theme statement has to settle it, because it decides whether the
-  decomposition opens with a restructuring ticket.
+constraint that new work conforms to, or the structure is itself a subject this scope may
+reshape. Stage 2's theme statement has to settle it, because it decides whether the
+decomposition opens with a restructuring ticket.
 - **Whether the problem is personal or shared.** The problem statement is first person while
-  multi-guild support is in scope.
+multi-guild support is in scope.
 - **Whether images follow the same size logic as video**, or always attach. The previous
-  breakdown carried this as an open assumption and this framing does not settle it.
+breakdown carried this as an open assumption and this framing does not settle it.
 - **Three in-scope items already shipped:** the development and production sync split, the bot's
-  Docker container, and Python 3.12. Recorded as inherited context rather than new work.
+Docker container, and Python 3.12. Recorded as inherited context rather than new work.
 - **"Docker containers for every component, with all required images available"** has no stated
-  pass condition.
+pass condition.
+
+
 
 ### Stage 2: Group into a theme
 
+
+
 #### Theme
 
-**The end-to-end media download path, grown along the existing `bot/` structure.** Everything
+**The end-to-end media download path, grown along the existing** `bot/` **structure.** Everything
 required to take a URL from a slash command to a file in the requester's hands, added at the seams
 the shipped bot already has, rather than in a shape imported from a plan that was never built.
 
@@ -160,9 +175,11 @@ deployment notes.
 - Converting `discord.Client` to `commands.Bot` for its own sake.
 - Replacing the `os.getenv` `Config` with `pydantic-settings` for its own sake.
 - Adopting `uv`, `pyproject.toml`, or a `src/criwin/` layout. These appear throughout
-  `criwin-discord-bot.md` and were never built, which makes that document's file lists reference
-  material rather than instructions.
+`criwin-discord-bot.md` and were never built, which makes that document's file lists reference
+material rather than instructions.
 - Metrics, Grafana, Redis, structured logging with correlation IDs, and a CI pipeline.
+
+
 
 #### The structure ruling
 
@@ -191,21 +208,23 @@ Strictly linear. Every ticket depends only on the one before it.
 
 `1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13`
 
-| # | Title | Type | Goal | Files |
-| --- | --- | --- | --- | --- |
-| 1 | Test harness and development dependencies | Feature | `make test` runs pytest against the existing bot and reports a passing test rather than zero collected. | 6 |
-| 2 | URL validation and media metadata extraction | Feature | `/download <url>` reports what media sits behind a supported link without fetching it. | 10 |
-| 3 | Post size resolution and the 50 MB gate | Feature | The true total size of a post is resolved before any bytes are fetched, and posts over 50 MB or of unknown size are refused. | 6 |
-| 4 | Cookie files and extractor authentication | Feature | yt-dlp authenticates with operator-supplied cookies, so all four platforms extract rather than three. | 10 |
-| 5 | Media fetch and Discord attachment delivery | Feature | Media within the guild's attachment limit is downloaded and delivered ephemerally as a file. | 10 |
-| 6 | MinIO storage and presigned URL delivery | Feature | Media too large to attach is uploaded to MinIO and returned as a 24 hour presigned link. | 9 |
-| 7 | Database plumbing and Alembic migrations | Feature | PostgreSQL runs in Compose and the bot holds a working async session factory with migrations under Alembic control. | 11 |
-| 8 | Guild registration | Feature | The bot records every guild it is in, which is multi-guild support made real and the first consumer of the database. | 5 |
-| 9 | Per-user download concurrency lock | Feature | A user with a download in flight is refused a second one until the first finishes. | 6 |
-| 10 | Stored object expiry | Feature | Objects are deleted 24 hours after upload so the link and the object die together. | 6 |
-| 11 | User-facing failure handling | Feature | Every way a download can fail produces a distinct ephemeral message instead of a traceback or silence. | 7 |
-| 12 | End-to-end regression coverage | Feature | The delivered path is covered well enough that a change breaking it fails the suite. | 8 |
-| 13 | README and deployment documentation | Feature | A clean Debian host can be brought to a working bot using only the documentation. | 4 |
+
+| #   | Title                                        | Type    | Goal                                                                                                                         | Files |
+| --- | -------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------- | ----- |
+| 1   | Test harness and development dependencies    | Feature | `make test` runs pytest against the existing bot and reports a passing test rather than zero collected.                      | 6     |
+| 2   | URL validation and media metadata extraction | Feature | `/download <url>` reports what media sits behind a supported link without fetching it.                                       | 10    |
+| 3   | Post size resolution and the 50 MB gate      | Feature | The true total size of a post is resolved before any bytes are fetched, and posts over 50 MB or of unknown size are refused. | 6     |
+| 4   | Cookie files and extractor authentication    | Feature | yt-dlp authenticates with operator-supplied cookies, so all four platforms extract rather than three.                        | 10    |
+| 5   | Media fetch and Discord attachment delivery  | Feature | Media within the guild's attachment limit is downloaded and delivered ephemerally as a file.                                 | 10    |
+| 6   | MinIO storage and presigned URL delivery     | Feature | Media too large to attach is uploaded to MinIO and returned as a 24 hour presigned link.                                     | 9     |
+| 7   | Database plumbing and Alembic migrations     | Feature | PostgreSQL runs in Compose and the bot holds a working async session factory with migrations under Alembic control.          | 11    |
+| 8   | Guild registration                           | Feature | The bot records every guild it is in, which is multi-guild support made real and the first consumer of the database.         | 5     |
+| 9   | Per-user download concurrency lock           | Feature | A user with a download in flight is refused a second one until the first finishes.                                           | 6     |
+| 10  | Stored object expiry                         | Feature | Objects are deleted 24 hours after upload so the link and the object die together.                                           | 6     |
+| 11  | User-facing failure handling                 | Feature | Every way a download can fail produces a distinct ephemeral message instead of a traceback or silence.                       | 7     |
+| 12  | End-to-end regression coverage               | Feature | The delivered path is covered well enough that a change breaking it fails the suite.                                         | 8     |
+| 13  | README and deployment documentation          | Feature | A clean Debian host can be brought to a working bot using only the documentation.                                            | 4     |
+
 
 File counts for tickets 3 through 6 were revised upward during Stage 4, when the per-file lists
 were written out. The original estimates were 5, 9, 8, and 8.
@@ -213,26 +232,28 @@ were written out. The original estimates were 5, 9, 8, and 8.
 #### Decisions embedded in this ordering
 
 - **The test harness is ticket 1, not ticket 12.** There is no pytest in the repository at all, and
-  every later ticket carries its own tests. Ticket 1 also owns a real problem rather than a config
-  file: `Config` validates at import time, so importing anything under `bot` inside a test fails on
-  a machine with no `.env`.
+every later ticket carries its own tests. Ticket 1 also owns a real problem rather than a config
+file: `Config` validates at import time, so importing anything under `bot` inside a test fails on
+a machine with no `.env`.
 - **The whole download path lands before any database work.** Tickets 1 through 6 deliver the
-  Stage 1 goal in full. Nothing in that path needs PostgreSQL, because cookies moved to a bind
-  mount. Building the database earlier would carry five tickets of unused infrastructure before the
-  first consumer appeared, which is the speculative infrastructure the theme rejects.
+Stage 1 goal in full. Nothing in that path needs PostgreSQL, because cookies moved to a bind
+mount. Building the database earlier would carry five tickets of unused infrastructure before the
+first consumer appeared, which is the speculative infrastructure the theme rejects.
 - **The database arrives at ticket 7, immediately before the two things that need it:** the
-  concurrency lock at 9 and object expiry at 10. Guild registration at 8 sits between them as the
-  first consumer, which keeps ticket 7 from being plumbing that nothing exercises.
+concurrency lock at 9 and object expiry at 10. Guild registration at 8 sits between them as the
+first consumer, which keeps ticket 7 from being plumbing that nothing exercises.
 - **Tickets 7 and 8 are split**, where the previous plan kept database plumbing and guild
-  registration together. Combined against the current structure they come to fifteen files.
+registration together. Combined against the current structure they come to fifteen files.
 - **Sizing is split out as ticket 3.** Extraction answers what is behind a URL. Sizing answers how
-  big it is and whether it is refused.
+big it is and whether it is refused.
 - **The concurrency lock lands at ticket 9, after the fetch**, so it guards a real multi-second
-  download and can be demonstrated rather than argued about.
+download and can be demonstrated rather than argued about.
 - **Failure handling is its own ticket at 11**, after every failure surface exists, so the messages
-  are designed as one coherent set.
+are designed as one coherent set.
 - **Ticket 5 owns two decisions** without an obvious home: the temp file lifecycle, and what happens
-  to a carousel of more than ten images, since Discord caps attachments per message at ten.
+to a carousel of more than ten images, since Discord caps attachments per message at ten.
+
+
 
 #### The cookie storage decision, settled here
 
@@ -244,10 +265,12 @@ a migration of cookies into the database at that point.
 #### Accepted costs of the linear order
 
 - **Objects uploaded between tickets 6 and 10 are untracked and never expire.** Ticket 10 either
-  reconciles against the bucket on first run, or the operator wipes the bucket once.
+reconciles against the bucket on first run, or the operator wipes the bucket once.
 - **A user can issue concurrent downloads from ticket 5 until ticket 9.**
 - **Ticket 11 is the widest ticket in the chain**, because it maps failures from extraction, sizing,
-  cookies, fetch, storage, and the lock into one message set.
+cookies, fetch, storage, and the lock into one message set.
+
+
 
 ### Stage 4: Ticket detail
 
@@ -259,6 +282,8 @@ entirely `.env.example`, `.gitignore`, and `Makefile` edits that were not counte
 
 ---
 
+
+
 #### Ticket 1: Test harness and development dependencies
 
 **Goal.** `make test` runs pytest against the existing bot and reports a passing test rather than
@@ -268,14 +293,16 @@ zero collected.
 the only hook available for work that must happen before your package is imported. `pytest-asyncio`
 with `asyncio_mode = auto` lets every later `async def` test run without a per-test decorator.
 
-| File | Purpose |
-| --- | --- |
-| `requirements-dev.txt` | `pytest` and `pytest-asyncio`, separate from `requirements.txt` so the production image does not carry a test runner. |
-| `pytest.ini` | A standalone ini file rather than a `pyproject.toml` block, per the structure ruling. Sets `asyncio_mode = auto`, `testpaths = tests`, and `pythonpath = .`. |
-| `tests/conftest.py` | Sets `DISCORD_TOKEN`, `ENVIRONMENT`, and `DEV_GUILD_ID` at module scope, before any test imports `bot.config`. |
-| `tests/test_config.py` | Asserts `Config` loads the fixture environment and that an invalid `ENVIRONMENT` raises. |
-| `Makefile` (edit) | `install-dev` and `test`. `.PHONY` must list `test`, which collides with the `tests/` directory otherwise. |
-| `.gitignore` (edit) | `.pytest_cache/`. |
+
+| File                   | Purpose                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `requirements-dev.txt` | `pytest` and `pytest-asyncio`, separate from `requirements.txt` so the production image does not carry a test runner.                                        |
+| `pytest.ini`           | A standalone ini file rather than a `pyproject.toml` block, per the structure ruling. Sets `asyncio_mode = auto`, `testpaths = tests`, and `pythonpath = .`. |
+| `tests/conftest.py`    | Sets `DISCORD_TOKEN`, `ENVIRONMENT`, and `DEV_GUILD_ID` at module scope, before any test imports `bot.config`.                                               |
+| `tests/test_config.py` | Asserts `Config` loads the fixture environment and that an invalid `ENVIRONMENT` raises.                                                                     |
+| `Makefile` (edit)      | `install-dev` and `test`. `.PHONY` must list `test`, which collides with the `tests/` directory otherwise.                                                   |
+| `.gitignore` (edit)    | `.pytest_cache/`.                                                                                                                                            |
+
 
 **Mechanic worth knowing.** `bot/config.py` validates in the class body, which runs at import time
 and raises if `DISCORD_TOKEN` is unset. Setting the environment inside a fixture is too late: the
@@ -288,6 +315,8 @@ zero collection errors.
 
 ---
 
+
+
 #### Ticket 2: URL validation and media metadata extraction
 
 **Goal.** `/download <url>` reports what media sits behind a supported link without fetching it.
@@ -297,18 +326,20 @@ zero collection errors.
 multi-item post. A carousel and a single video differ only in whether `entries` is present, which is
 what lets one normalization function cover both.
 
-| File | Purpose |
-| --- | --- |
-| `requirements.txt` (edit) | Pins `yt-dlp`. Expect to bump it often. |
-| `bot/media/platforms.py` | The four-platform allowlist, rejecting unsupported hosts before any network call. Handles `youtu.be`, `m.youtube.com`, `vm.tiktok.com`, `old.reddit.com`, and `www` prefixes. |
-| `bot/media/types.py` | `MediaItem` and `MediaPost`. The boundary that keeps yt-dlp's raw dictionary out of commands, storage, and delivery. |
-| `bot/media/extractor.py` | The yt-dlp wrapper. Runs extraction in a worker thread and normalizes single and `entries` cases into one `MediaPost`. |
-| `bot/commands/download/__init__.py` | `setup_download(tree)`, mirroring `bot/commands/ping/__init__.py`. |
-| `bot/commands/download/download.py` | `handle_download(interaction, url)`. Defers ephemerally first, validates the host, extracts, reports. |
-| `bot/commands/setup.py` (edit) | One line registering the command. This file is the registry seam the structure ruling preserves. |
-| `Dockerfile` (edit) | Installs FFmpeg, which `python:3.12-slim` lacks and yt-dlp needs to merge separate video and audio streams. |
-| `tests/test_platforms.py` | Every host variant, plus rejection of unsupported hosts and non-URLs. |
-| `tests/test_extractor.py` | Normalization of a single video and a carousel, against recorded metadata rather than live calls. |
+
+| File                                | Purpose                                                                                                                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `requirements.txt` (edit)           | Pins `yt-dlp`. Expect to bump it often.                                                                                                                                       |
+| `bot/media/platforms.py`            | The four-platform allowlist, rejecting unsupported hosts before any network call. Handles `youtu.be`, `m.youtube.com`, `vm.tiktok.com`, `old.reddit.com`, and `www` prefixes. |
+| `bot/media/types.py`                | `MediaItem` and `MediaPost`. The boundary that keeps yt-dlp's raw dictionary out of commands, storage, and delivery.                                                          |
+| `bot/media/extractor.py`            | The yt-dlp wrapper. Runs extraction in a worker thread and normalizes single and `entries` cases into one `MediaPost`.                                                        |
+| `bot/commands/download/__init__.py` | `setup_download(tree)`, mirroring `bot/commands/ping/__init__.py`.                                                                                                            |
+| `bot/commands/download/download.py` | `handle_download(interaction, url)`. Defers ephemerally first, validates the host, extracts, reports.                                                                         |
+| `bot/commands/setup.py` (edit)      | One line registering the command. This file is the registry seam the structure ruling preserves.                                                                              |
+| `Dockerfile` (edit)                 | Installs FFmpeg, which `python:3.12-slim` lacks and yt-dlp needs to merge separate video and audio streams.                                                                   |
+| `tests/test_platforms.py`           | Every host variant, plus rejection of unsupported hosts and non-URLs.                                                                                                         |
+| `tests/test_extractor.py`           | Normalization of a single video and a carousel, against recorded metadata rather than live calls.                                                                             |
+
 
 **Mechanics worth knowing.** yt-dlp is synchronous. Calling `extract_info` inside a coroutine stalls
 the event loop, which stops the bot answering anything and eventually causes gateway heartbeat
@@ -323,6 +354,8 @@ expected to fail here and is fixed in ticket 4.
 
 ---
 
+
+
 #### Ticket 3: Post size resolution and the 50 MB gate
 
 **Goal.** The true total size of a post is resolved before any bytes are fetched, and posts over
@@ -332,14 +365,16 @@ expected to fail here and is fixed in ticket 4.
 trip. Servers rejecting `HEAD` usually honour `Range: bytes=0-0`, whose `Content-Range` header ends
 with the total size.
 
-| File | Purpose |
-| --- | --- |
-| `requirements.txt` (edit) | Pins `httpx`. |
-| `bot/media/sizing.py` | The ladder: `filesize`, `filesize_approx`, `HEAD`, ranged `GET`, summed across every entry. Applies the cap and the refuse-when-unknown rule. |
-| `bot/config.py` (edit) | `MAX_POST_BYTES`, default 50 MB, parsed to `int`. |
-| `.env.example` (edit) | Documents `MAX_POST_BYTES`. |
-| `bot/commands/download/download.py` (edit) | Calls the resolver and reports size and the accept or refuse decision. |
-| `tests/test_sizing.py` | Each rung, the summed carousel, refusal above the cap, refusal when size is unknown. |
+
+| File                                       | Purpose                                                                                                                                       |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `requirements.txt` (edit)                  | Pins `httpx`.                                                                                                                                 |
+| `bot/media/sizing.py`                      | The ladder: `filesize`, `filesize_approx`, `HEAD`, ranged `GET`, summed across every entry. Applies the cap and the refuse-when-unknown rule. |
+| `bot/config.py` (edit)                     | `MAX_POST_BYTES`, default 50 MB, parsed to `int`.                                                                                             |
+| `.env.example` (edit)                      | Documents `MAX_POST_BYTES`.                                                                                                                   |
+| `bot/commands/download/download.py` (edit) | Calls the resolver and reports size and the accept or refuse decision.                                                                        |
+| `tests/test_sizing.py`                     | Each rung, the summed carousel, refusal above the cap, refusal when size is unknown.                                                          |
+
 
 **Policy this ticket owns.** The cap is per post, not per file, so twelve 5 MB images are refused at
 60 MB. Segmented HLS or DASH formats with no single `Content-Length` are refused rather than
@@ -355,6 +390,8 @@ the first item, and a segmented format is refused.
 
 ---
 
+
+
 #### Ticket 4: Cookie files and extractor authentication
 
 **Goal.** yt-dlp authenticates with operator-supplied cookies, so all four platforms extract rather
@@ -364,18 +401,20 @@ than three.
 from a logged-in browser session. Cookies expire, so replacement is routine maintenance, which is
 why `make load-cookies` exists.
 
-| File | Purpose |
-| --- | --- |
-| `bot/config.py` (edit) | `COOKIE_DIR`, defaulting to a path on the SSD. |
-| `bot/media/cookies.py` | Resolves `<COOKIE_DIR>/<platform>.txt` or returns `None`. Deliberately trivial, which is the payoff of the bind mount decision. |
-| `bot/media/extractor.py` (edit) | Passes `cookiefile` when a cookie exists, omits the key entirely when it does not. |
-| `docker-compose.yml` (edit) | Mounts the host cookie directory read-only. Nothing in the bot should write a cookie file. |
-| `Makefile` (edit) | `load-cookies`, copying a named file into place under the right platform name with `0600`. |
-| `.env.example` (edit) | Documents `COOKIE_DIR`. |
-| `.gitignore` (edit) | Excludes the cookie directory. A committed cookie file is a committed session. |
-| `.dockerignore` (edit) | Same directory, so a cookie cannot be baked into an image layer. |
-| `tests/test_cookies.py` | Resolution when present, `None` when absent, no exception when the directory is missing. |
-| `tests/test_extractor.py` (edit) | `cookiefile` present when a cookie exists, absent when it does not. |
+
+| File                             | Purpose                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `bot/config.py` (edit)           | `COOKIE_DIR`, defaulting to a path on the SSD.                                                                                  |
+| `bot/media/cookies.py`           | Resolves `<COOKIE_DIR>/<platform>.txt` or returns `None`. Deliberately trivial, which is the payoff of the bind mount decision. |
+| `bot/media/extractor.py` (edit)  | Passes `cookiefile` when a cookie exists, omits the key entirely when it does not.                                              |
+| `docker-compose.yml` (edit)      | Mounts the host cookie directory read-only. Nothing in the bot should write a cookie file.                                      |
+| `Makefile` (edit)                | `load-cookies`, copying a named file into place under the right platform name with `0600`.                                      |
+| `.env.example` (edit)            | Documents `COOKIE_DIR`.                                                                                                         |
+| `.gitignore` (edit)              | Excludes the cookie directory. A committed cookie file is a committed session.                                                  |
+| `.dockerignore` (edit)           | Same directory, so a cookie cannot be baked into an image layer.                                                                |
+| `tests/test_cookies.py`          | Resolution when present, `None` when absent, no exception when the directory is missing.                                        |
+| `tests/test_extractor.py` (edit) | `cookiefile` present when a cookie exists, absent when it does not.                                                             |
+
 
 **Why the bind mount.** Against the database approach it replaces, it removes a model, a migration,
 a materialize-to-temp-file step, permission handling on that temp file, and a cleanup path that has
@@ -385,6 +424,8 @@ to run even when extraction raises.
 removing the file makes it fail again without an unhandled exception.
 
 ---
+
+
 
 #### Ticket 5: Media fetch and Discord attachment delivery
 
@@ -396,18 +437,20 @@ is no need to derive it from the boost tier as the Stage 1 scope assumed. Files 
 `discord.File` objects through `interaction.followup.send(files=[...], ephemeral=True)`, since the
 interaction was deferred in ticket 2.
 
-| File | Purpose |
-| --- | --- |
-| `bot/media/downloader.py` | Fetches with yt-dlp into a per-invocation temp directory through `asyncio.to_thread`, and guarantees removal on success and failure. |
-| `bot/config.py` (edit) | `MEDIA_TMP_DIR`, on the HDD per the Stage 1 disk split. |
-| `bot/delivery/limits.py` | Reads `guild.filesize_limit` and returns the attach-or-store decision. Ticket 6 replaces the store stub. |
-| `bot/delivery/attachment.py` | Builds `discord.File` objects and sends them, splitting into groups of ten. |
-| `bot/commands/download/download.py` (edit) | Wires extraction to sizing to fetch to delivery. |
-| `docker-compose.yml` (edit) | Mounts the HDD media path into the bot container. |
-| `.env.example` (edit) | Documents `MEDIA_TMP_DIR`. |
-| `tests/test_downloader.py` | Fetch and temp directory removal, including on raise. |
-| `tests/test_limits.py` | The attach-or-store decision across limits, including the DM case. |
-| `tests/test_attachment.py` | Splitting a twelve item carousel into two messages, and the single file case. |
+
+| File                                       | Purpose                                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `bot/media/downloader.py`                  | Fetches with yt-dlp into a per-invocation temp directory through `asyncio.to_thread`, and guarantees removal on success and failure. |
+| `bot/config.py` (edit)                     | `MEDIA_TMP_DIR`, on the HDD per the Stage 1 disk split.                                                                              |
+| `bot/delivery/limits.py`                   | Reads `guild.filesize_limit` and returns the attach-or-store decision. Ticket 6 replaces the store stub.                             |
+| `bot/delivery/attachment.py`               | Builds `discord.File` objects and sends them, splitting into groups of ten.                                                          |
+| `bot/commands/download/download.py` (edit) | Wires extraction to sizing to fetch to delivery.                                                                                     |
+| `docker-compose.yml` (edit)                | Mounts the HDD media path into the bot container.                                                                                    |
+| `.env.example` (edit)                      | Documents `MEDIA_TMP_DIR`.                                                                                                           |
+| `tests/test_downloader.py`                 | Fetch and temp directory removal, including on raise.                                                                                |
+| `tests/test_limits.py`                     | The attach-or-store decision across limits, including the DM case.                                                                   |
+| `tests/test_attachment.py`                 | Splitting a twelve item carousel into two messages, and the single file case.                                                        |
+
 
 **Mechanics worth knowing.** Discord allows at most ten attachments per message, so a twelve image
 carousel cannot go out in one follow-up, which is why `bot/delivery/attachment.py` is a module rather
@@ -428,6 +471,8 @@ after a failure, and a DM invocation does not raise.
 
 ---
 
+
+
 #### Ticket 6: MinIO storage and presigned URL delivery
 
 **Goal.** Media too large to attach is uploaded to MinIO and returned as a 24 hour presigned link.
@@ -436,17 +481,19 @@ after a failure, and a DM invocation does not raise.
 expiry in its query string, so anyone holding it can fetch the object without credentials until it
 expires.
 
-| File | Purpose |
-| --- | --- |
-| `requirements.txt` (edit) | Pins `minio`. |
-| `bot/config.py` (edit) | Internal endpoint, public endpoint, access key, secret key, bucket, TLS flag. Two endpoints deliberately. |
-| `bot/storage/client.py` | Bucket creation if absent, upload, and presign. Every call through `asyncio.to_thread`, because the MinIO client is synchronous like yt-dlp. |
-| `bot/delivery/link.py` | Formats the follow-up message: the link, what it points at, and when it expires. |
-| `bot/delivery/limits.py` (edit) | Replaces the ticket 5 stub so the store branch is real. |
-| `bot/commands/download/download.py` (edit) | Takes the store branch when media exceeds the guild limit. |
-| `docker-compose.yml` (edit) | MinIO service with its data volume on the HDD. |
-| `.env.example` (edit) | Documents all six settings. |
-| `tests/test_storage.py` | Upload, presign, and that the URL carries the public endpoint rather than the internal one. |
+
+| File                                       | Purpose                                                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `requirements.txt` (edit)                  | Pins `minio`.                                                                                                                                |
+| `bot/config.py` (edit)                     | Internal endpoint, public endpoint, access key, secret key, bucket, TLS flag. Two endpoints deliberately.                                    |
+| `bot/storage/client.py`                    | Bucket creation if absent, upload, and presign. Every call through `asyncio.to_thread`, because the MinIO client is synchronous like yt-dlp. |
+| `bot/delivery/link.py`                     | Formats the follow-up message: the link, what it points at, and when it expires.                                                             |
+| `bot/delivery/limits.py` (edit)            | Replaces the ticket 5 stub so the store branch is real.                                                                                      |
+| `bot/commands/download/download.py` (edit) | Takes the store branch when media exceeds the guild limit.                                                                                   |
+| `docker-compose.yml` (edit)                | MinIO service with its data volume on the HDD.                                                                                               |
+| `.env.example` (edit)                      | Documents all six settings.                                                                                                                  |
+| `tests/test_storage.py`                    | Upload, presign, and that the URL carries the public endpoint rather than the internal one.                                                  |
+
 
 **Mechanic worth knowing, and the one defect here that passes its own tests.** A presigned URL embeds
 the hostname it was signed against. Signed against the Compose service name it produces
@@ -462,6 +509,8 @@ live indefinitely.
 
 ---
 
+
+
 #### Ticket 7: Database plumbing and Alembic migrations
 
 **Goal.** PostgreSQL runs in Compose and the bot holds a working async session factory with
@@ -472,19 +521,21 @@ migrations under Alembic control.
 database, which is why `migrations/env.py` must import the models and read the URL from the
 environment.
 
-| File | Purpose |
-| --- | --- |
-| `requirements.txt` (edit) | Pins `sqlalchemy[asyncio]`, `asyncpg`, `alembic`. |
-| `bot/config.py` (edit) | `DATABASE_URL`, required in every environment. |
-| `bot/db/base.py` | The `DeclarativeBase` whose metadata Alembic diffs against, inherited by every model in tickets 8, 9, and 10. |
-| `bot/db/session.py` | Async engine, `async_sessionmaker`, and a session context manager. Pool size matters: the host has 2 GB with PostgreSQL co-resident, so the default pool is larger than this deployment wants. |
-| `alembic.ini` | Configuration with `sqlalchemy.url` left blank, so no credential lands in a committed file. |
-| `migrations/env.py` | Points Alembic at the metadata and the runtime URL. Always requires hand editing after `alembic init`, doubly so for async. |
-| `migrations/script.py.mako` | Generated template, committed unmodified. |
-| `docker-compose.yml` (edit) | PostgreSQL service, volume on the SSD, plus a healthcheck. |
-| `.env.example` (edit) | Documents `DATABASE_URL` and the PostgreSQL credentials Compose needs. |
-| `Makefile` (edit) | `migrate` and `revision`, run inside the container so tooling matches the deployed environment. |
-| `tests/test_session.py` | The factory opens a session and executes a trivial statement. |
+
+| File                        | Purpose                                                                                                                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `requirements.txt` (edit)   | Pins `sqlalchemy[asyncio]`, `asyncpg`, `alembic`.                                                                                                                                              |
+| `bot/config.py` (edit)      | `DATABASE_URL`, required in every environment.                                                                                                                                                 |
+| `bot/db/base.py`            | The `DeclarativeBase` whose metadata Alembic diffs against, inherited by every model in tickets 8, 9, and 10.                                                                                  |
+| `bot/db/session.py`         | Async engine, `async_sessionmaker`, and a session context manager. Pool size matters: the host has 2 GB with PostgreSQL co-resident, so the default pool is larger than this deployment wants. |
+| `alembic.ini`               | Configuration with `sqlalchemy.url` left blank, so no credential lands in a committed file.                                                                                                    |
+| `migrations/env.py`         | Points Alembic at the metadata and the runtime URL. Always requires hand editing after `alembic init`, doubly so for async.                                                                    |
+| `migrations/script.py.mako` | Generated template, committed unmodified.                                                                                                                                                      |
+| `docker-compose.yml` (edit) | PostgreSQL service, volume on the SSD, plus a healthcheck.                                                                                                                                     |
+| `.env.example` (edit)       | Documents `DATABASE_URL` and the PostgreSQL credentials Compose needs.                                                                                                                         |
+| `Makefile` (edit)           | `migrate` and `revision`, run inside the container so tooling matches the deployed environment.                                                                                                |
+| `tests/test_session.py`     | The factory opens a session and executes a trivial statement.                                                                                                                                  |
+
 
 **Mechanics worth knowing.** Alembic's generated `env.py` is synchronous. Against an async engine it
 must build an `AsyncEngine` and run migrations inside `connection.run_sync(...)`. Skipping this fails
@@ -500,6 +551,8 @@ cold `docker compose up` brings the bot up without a connection error.
 
 ---
 
+
+
 #### Ticket 8: Guild registration
 
 **Goal.** The bot records every guild it is in, which is multi-guild support made real and the first
@@ -509,13 +562,15 @@ consumer of the database.
 `sqlalchemy.dialects.postgresql.insert(...).on_conflict_do_update(...)`. It is dialect-specific and
 not available on the generic `insert`.
 
-| File | Purpose |
-| --- | --- |
-| `bot/models/guild.py` | The `guild` table: Discord guild ID as primary key, name, joined timestamp. |
-| `migrations/versions/0001_create_guild.py` | First migration, autogenerated then reviewed. |
-| `bot/services/guilds.py` | The upsert, kept out of the client so it is testable without a gateway. |
-| `bot/client.py` (edit) | Upserts from `on_ready` for every guild in `self.guilds`, and from `on_guild_join`. |
-| `tests/test_guild_registration.py` | A join writes one row, a repeated `on_ready` does not duplicate, a rename updates. |
+
+| File                                       | Purpose                                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `bot/models/guild.py`                      | The `guild` table: Discord guild ID as primary key, name, joined timestamp.         |
+| `migrations/versions/0001_create_guild.py` | First migration, autogenerated then reviewed.                                       |
+| `bot/services/guilds.py`                   | The upsert, kept out of the client so it is testable without a gateway.             |
+| `bot/client.py` (edit)                     | Upserts from `on_ready` for every guild in `self.guilds`, and from `on_guild_join`. |
+| `tests/test_guild_registration.py`         | A join writes one row, a repeated `on_ready` does not duplicate, a rename updates.  |
+
 
 **Mechanics worth knowing.** `on_ready` is not once per process: discord.py fires it again after
 every reconnection, so registration must be idempotent, which is what makes the upsert the right
@@ -528,6 +583,8 @@ nothing, and a renamed guild updates the stored name.
 
 ---
 
+
+
 #### Ticket 9: Per-user download concurrency lock
 
 **Goal.** A user with a download in flight is refused a second one until the first finishes.
@@ -536,14 +593,16 @@ nothing, and a renamed guild updates the stored name.
 (`CREATE UNIQUE INDEX ... WHERE status = 'active'`). It permits many completed jobs per user and at
 most one active job per user, which is exactly the rule here.
 
-| File | Purpose |
-| --- | --- |
-| `bot/models/download_job.py` | Job rows: user ID, status, started timestamp. |
+
+| File                                              | Purpose                                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `bot/models/download_job.py`                      | Job rows: user ID, status, started timestamp.                                                |
 | `migrations/versions/0002_create_download_job.py` | Schema plus the partial index via `op.create_index(..., unique=True, postgresql_where=...)`. |
-| `bot/services/job_lock.py` | Acquire, release, and reclaim jobs left active by a crash. |
-| `bot/commands/download/download.py` (edit) | Acquires before the fetch, releases in a `finally`. |
-| `tests/test_job_lock.py` | Acquire, contention, release, stale reclamation. |
-| `tests/test_download_concurrency.py` | A second command during an in-flight download is refused. |
+| `bot/services/job_lock.py`                        | Acquire, release, and reclaim jobs left active by a crash.                                   |
+| `bot/commands/download/download.py` (edit)        | Acquires before the fetch, releases in a `finally`.                                          |
+| `tests/test_job_lock.py`                          | Acquire, contention, release, stale reclamation.                                             |
+| `tests/test_download_concurrency.py`              | A second command during an in-flight download is refused.                                    |
+
 
 **Why the database and not a Python set.** An in-memory lock is less code but does not survive a
 restart, so a crash mid-download leaves nothing to release and the user stays blocked. The partial
@@ -559,6 +618,8 @@ bot mid-download does not leave that user permanently blocked.
 
 ---
 
+
+
 #### Ticket 10: Stored object expiry
 
 **Goal.** Objects are deleted 24 hours after upload so the link and the object die together.
@@ -567,14 +628,16 @@ bot mid-download does not leave that user permanently blocked.
 works with a plain `discord.Client` and does not require `commands.Bot`, so it fits the current
 structure without change.
 
-| File | Purpose |
-| --- | --- |
-| `bot/models/stored_object.py` | Object key, created timestamp, expiry timestamp. |
-| `migrations/versions/0003_create_stored_object.py` | Schema, indexed on expiry since the sweep queries by it. |
-| `bot/tasks/cleanup.py` | The sweep: select expired rows, remove each object, delete the row. |
-| `bot/storage/client.py` (edit) | Adds object removal. |
-| `bot/client.py` (edit) | Starts the loop in `setup_hook` and cancels it on close. |
-| `tests/test_cleanup.py` | Expired removed, unexpired kept, and a MinIO failure does not kill the loop. |
+
+| File                                               | Purpose                                                                      |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `bot/models/stored_object.py`                      | Object key, created timestamp, expiry timestamp.                             |
+| `migrations/versions/0003_create_stored_object.py` | Schema, indexed on expiry since the sweep queries by it.                     |
+| `bot/tasks/cleanup.py`                             | The sweep: select expired rows, remove each object, delete the row.          |
+| `bot/storage/client.py` (edit)                     | Adds object removal.                                                         |
+| `bot/client.py` (edit)                             | Starts the loop in `setup_hook` and cancels it on close.                     |
+| `tests/test_cleanup.py`                            | Expired removed, unexpired kept, and a MinIO failure does not kill the loop. |
+
 
 **Why a task and not a lifecycle rule.** S3 and MinIO lifecycle expiration is day granular and
 measured from a day boundary, so it cannot express 24 hours from a specific upload. Running the sweep
@@ -595,20 +658,24 @@ and a sweep against an unreachable MinIO logs an error and runs again next inter
 
 ---
 
+
+
 #### Ticket 11: User-facing failure handling
 
 **Goal.** Every way a download can fail produces a distinct ephemeral message instead of a traceback
 or silence.
 
-| File | Purpose |
-| --- | --- |
-| `bot/errors.py` | Typed exceptions: unsupported platform, extraction failed, authentication required, size unknown, too large, download in progress, storage unavailable. |
-| `bot/media/extractor.py` (edit) | Maps yt-dlp `DownloadError` text onto typed errors, separating a private or deleted post from an expired cookie from a genuine extractor break. |
-| `bot/media/sizing.py` (edit) | Raises typed errors instead of returning sentinels. |
-| `bot/commands/download/download.py` (edit) | One handler mapping each typed error to its message. |
-| `bot/client.py` (edit) | `tree.on_error`, so anything unmapped still produces a response. |
-| `tests/test_errors.py` | Real yt-dlp error strings map to the right typed error. |
-| `tests/test_error_messages.py` | Every typed error produces a distinct message, and no two collide. |
+
+| File                                       | Purpose                                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bot/errors.py`                            | Typed exceptions: unsupported platform, extraction failed, authentication required, size unknown, too large, download in progress, storage unavailable. |
+| `bot/media/extractor.py` (edit)            | Maps yt-dlp `DownloadError` text onto typed errors, separating a private or deleted post from an expired cookie from a genuine extractor break.         |
+| `bot/media/sizing.py` (edit)               | Raises typed errors instead of returning sentinels.                                                                                                     |
+| `bot/commands/download/download.py` (edit) | One handler mapping each typed error to its message.                                                                                                    |
+| `bot/client.py` (edit)                     | `tree.on_error`, so anything unmapped still produces a response.                                                                                        |
+| `tests/test_errors.py`                     | Real yt-dlp error strings map to the right typed error.                                                                                                 |
+| `tests/test_error_messages.py`             | Every typed error produces a distinct message, and no two collide.                                                                                      |
+
 
 **Why this matters more than it looks.** Stage 1 accepts extractor breakage as ongoing maintenance,
 which makes these messages the primary diagnostic surface. "Too large" versus "size could not be
@@ -632,20 +699,24 @@ injected unmapped exception still produces a response.
 
 ---
 
+
+
 #### Ticket 12: End-to-end regression coverage
 
 **Goal.** The delivered path is covered well enough that a change breaking it fails the suite.
 
-| File | Purpose |
-| --- | --- |
-| `tests/fakes/discord.py` | Fake interaction, guild, and follow-up, recording what was sent, so command tests need no gateway. |
-| `tests/fakes/ytdlp.py` | Recorded metadata for each platform, including a carousel and a segmented format. |
-| `tests/fakes/storage.py` | In-memory object store standing in for MinIO. |
-| `tests/test_end_to_end.py` | Command to extraction to size gate to fetch to delivery, for both the attach and link branches. |
-| `tests/conftest.py` (edit) | Registers the fakes as fixtures. |
-| `requirements-dev.txt` (edit) | Adds `pytest-cov`. |
-| `pytest.ini` (edit) | Coverage configuration and a failure threshold. |
-| `Makefile` (edit) | `coverage` target. |
+
+| File                          | Purpose                                                                                            |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| `tests/fakes/discord.py`      | Fake interaction, guild, and follow-up, recording what was sent, so command tests need no gateway. |
+| `tests/fakes/ytdlp.py`        | Recorded metadata for each platform, including a carousel and a segmented format.                  |
+| `tests/fakes/storage.py`      | In-memory object store standing in for MinIO.                                                      |
+| `tests/test_end_to_end.py`    | Command to extraction to size gate to fetch to delivery, for both the attach and link branches.    |
+| `tests/conftest.py` (edit)    | Registers the fakes as fixtures.                                                                   |
+| `requirements-dev.txt` (edit) | Adds `pytest-cov`.                                                                                 |
+| `pytest.ini` (edit)           | Coverage configuration and a failure threshold.                                                    |
+| `Makefile` (edit)             | `coverage` target.                                                                                 |
+
 
 **Note on ordering.** Stage 1 asked for pytest coverage over implemented features. Each ticket
 carries its own tests instead, and this one fills gaps and adds the end-to-end path. Retrofitting all
@@ -662,16 +733,20 @@ attachment split fails the suite.
 
 ---
 
+
+
 #### Ticket 13: README and deployment documentation
 
 **Goal.** A clean Debian host can be brought to a working bot using only the documentation.
 
-| File | Purpose |
-| --- | --- |
-| `README.md` | Replaces the bootstrap content: what the bot does, the four platforms, the size and expiry rules, and local setup including `make test`. |
-| `docs/deployment.md` | The Debian host: the SSD and HDD volume split, Compose bring-up order, migrations on deploy, loading cookies, and the up-to-an-hour propagation of production global command sync. |
-| `docs/configuration.md` | Every environment variable across the thirteen tickets, its default, and which component reads it. |
-| `Makefile` (edit) | A production bring-up target matching the deployment document exactly, so document and tooling cannot drift. |
+
+| File                    | Purpose                                                                                                                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `README.md`             | Replaces the bootstrap content: what the bot does, the four platforms, the size and expiry rules, and local setup including `make test`.                                           |
+| `docs/deployment.md`    | The Debian host: the SSD and HDD volume split, Compose bring-up order, migrations on deploy, loading cookies, and the up-to-an-hour propagation of production global command sync. |
+| `docs/configuration.md` | Every environment variable across the thirteen tickets, its default, and which component reads it.                                                                                 |
+| `Makefile` (edit)       | A production bring-up target matching the deployment document exactly, so document and tooling cannot drift.                                                                       |
+
 
 **One correction this ticket must carry.** The current `README.md` states that `make dev` runs in the
 foreground, while the `Makefile` passes `-d` and runs detached. That line is wrong today and stays
@@ -682,15 +757,19 @@ remembered from outside them.
 
 ---
 
+
+
 #### Least confident across the set
 
-- **Ticket 3's treatment of `filesize_approx`** near the 50 MB boundary, without real values to
-  reason from.
+- **Ticket 3's treatment of** `filesize_approx` near the 50 MB boundary, without real values to
+reason from.
 - **Ticket 5 at ten files**, carrying the temp file lifecycle, the guild limit read, the DM edge
-  case, and the ten attachment split.
+case, and the ten attachment split.
 - **Ticket 11's error text mapping**, since a private Instagram post and an expired cookie may not be
-  reliably distinguishable. If they are not, that ticket collapses two messages into one and says so
-  rather than guessing.
+reliably distinguishable. If they are not, that ticket collapses two messages into one and says so
+rather than guessing.
+
+
 
 ### Stage 5: PR summaries
 

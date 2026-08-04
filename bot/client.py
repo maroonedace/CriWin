@@ -7,7 +7,7 @@ from bot.commands.setup import setup_commands
 logger = logging.getLogger(__name__)
 
 async def sync_commands(tree: app_commands.CommandTree):
-    is_dev = Config.ENVIRONMENT.lower() == "development"
+    is_dev = Config.ENVIRONMENT == "development"
     if is_dev:
         dev_guild_id = Object(id=int(Config.DEV_GUILD_ID))
         tree.copy_global_to(guild=dev_guild_id)
