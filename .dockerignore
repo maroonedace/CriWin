@@ -1,0 +1,13 @@
+# Environment variables
+.env
+.env.development
+.env.production
+
+# Git
+.git
+
+# Python
+__pycache__
+
+# Virtual environment
+.venv/
