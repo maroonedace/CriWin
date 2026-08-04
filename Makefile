@@ -1,4 +1,14 @@
-.PHONY: dev dev-down prod prod-down logs
+PYTHON ?= python3.12
+
+
+.PHONY: dev dev-down prod prod-down logs install-dev test
+
+install-dev:
+	$(PYTHON) -m venv .venv
+	.venv/bin/pip install -r requirements.txt -r requirements-dev.txt
+
+test:
+	.venv/bin/pytest
 
 dev:
 	ENV_FILE=.env.development docker compose up --build -d

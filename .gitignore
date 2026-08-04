@@ -8,3 +8,6 @@ __pycache__/
 
 # Virtual Environment
 .venv/
+
+# Test Coverage
+.pytest_cache/
