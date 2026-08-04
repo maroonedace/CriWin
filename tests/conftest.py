@@ -1,6 +1,7 @@
 import pytest
 
 from bot.config import Config
+from tests.fakes.discord import FakeInteraction
 
 
 @pytest.fixture
@@ -9,3 +10,9 @@ def valid_config(monkeypatch):
     monkeypatch.setattr(Config, "ENVIRONMENT", "development")
     monkeypatch.setattr(Config, "DISCORD_TOKEN", "token")
     monkeypatch.setattr(Config, "DEV_GUILD_ID", "123456789")
+
+
+@pytest.fixture
+def interaction() -> FakeInteraction:
+    """A fresh interaction, unanswered, in a direct message."""
+    return FakeInteraction()
