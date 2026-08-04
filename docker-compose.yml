@@ -1,0 +1,6 @@
+services:
+  bot:
+    build: .
+    env_file:
+      - ${ENV_FILE}
+    restart: unless-stopped
