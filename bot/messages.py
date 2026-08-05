@@ -13,3 +13,7 @@ UNTITLED_POST = "Untitled"
 POST_SUMMARY = "**{title}** — {platform}, {count} item(s)"
 UNSUPPORTED_PLATFORM = "That link is not from a supported platform."
 EXTRACTION_FAILED = "Could not read that link."
+
+POST_TOO_LARGE = "That post is {size} MB, over the {limit} MB limit."
+POST_SIZE_UNKNOWN = "Could not work out how big that post is, so it was not downloaded."
+POST_EMPTY = "That link has no downloadable media."

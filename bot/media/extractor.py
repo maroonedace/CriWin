@@ -66,33 +66,35 @@ def build_post(source_url: str, platform: Platform, info: dict) -> MediaPost:
 
 def build_item(entry: dict) -> MediaItem:
     """Normalize one yt-dlp entry into a MediaItem."""
+    selected = selected_format(entry)
     ext = (entry.get("ext") or "").lower()
 
     return MediaItem(
-        url=direct_url(entry),
+        url=selected.get("url", ""),
         kind=MediaKind.IMAGE if ext in IMAGE_EXTENSIONS else MediaKind.VIDEO,
         ext=ext,
+        protocol=(selected.get("protocol") or entry.get("protocol") or "").lower(),
         filesize=entry.get("filesize"),
         filesize_approx=entry.get("filesize_approx"),
     )
 
 
-def direct_url(entry: dict) -> str:
-    """The address the bytes actually live at.
-
-    yt-dlp reports this in three different places depending on the extractor and
-    on whether a format had to be selected, so all three are tried in order.
-    Formats are ordered worst to best, so the last one is the selected quality.
-    """
+def selected_format(entry: dict) -> dict:
+    """The part of a yt-dlp entry that describes the bytes to fetch."""
     requested_downloads = entry.get("requested_downloads") or []
     if requested_downloads and requested_downloads[0].get("url"):
-        return requested_downloads[0]["url"]
+        return requested_downloads[0]
 
     if entry.get("url"):
-        return entry["url"]
+        return entry
 
     formats = entry.get("formats") or []
     if formats and formats[-1].get("url"):
-        return formats[-1]["url"]
+        return formats[-1]
 
-    return ""
+    return {}
+
+
+def direct_url(entry: dict) -> str:
+    """The address the bytes actually live at."""
+    return selected_format(entry).get("url", "")

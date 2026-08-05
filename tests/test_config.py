@@ -1,14 +1,18 @@
 import logging
+import os
+
 import pytest
 
 from bot.config import Config, validate_config
 from bot.constants import (
     CONFIG_VALIDATED,
     INVALID_ENVIRONMENT,
+    INVALID_MAX_POST_MB,
     MISSING_DEV_GUILD_ID,
     MISSING_TOKEN,
     NON_NUMERIC_DEV_GUILD_ID,
 )
+from bot.parsing import positive_int
 
 
 @pytest.mark.usefixtures("valid_config")
@@ -68,3 +72,28 @@ class TestValidateConfig:
         assert excinfo.value.code == 1
         assert [record.msg for record in caplog.records] == [NON_NUMERIC_DEV_GUILD_ID]
         assert "'not-a-number'" in caplog.text
+
+    def test_an_unusable_max_post_mb_exits(self, monkeypatch, caplog):
+        """positive_int has already turned the bad value into None by now, so
+        this is the only place an operator finds out why."""
+        monkeypatch.setattr(Config, "MAX_POST_MB", None)
+
+        with pytest.raises(SystemExit) as excinfo:
+            validate_config()
+
+        assert excinfo.value.code == 1
+        assert [record.msg for record in caplog.records] == [INVALID_MAX_POST_MB]
+
+
+class TestMaxPostMb:
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [("50", 50), ("1", 1), (" 25 ", 25), ("abc", None), ("0", None), ("-5", None)],
+    )
+    def test_is_parsed_from_the_environment_without_raising(
+        self, monkeypatch, raw, expected
+    ):
+        """Importing bot.config must never blow up on a typo in .env."""
+        monkeypatch.setenv("MAX_POST_MB", raw)
+
+        assert positive_int(os.getenv("MAX_POST_MB")) == expected
