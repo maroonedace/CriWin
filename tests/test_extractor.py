@@ -3,7 +3,13 @@ import pytest
 from bot.media import extractor
 from bot.media.platforms import Platform
 from bot.media.types import MediaItem, MediaKind, MediaPost
-from bot.media.extractor import build_item, build_post, extract, direct_url
+from bot.media.extractor import (
+    build_item,
+    build_post,
+    direct_url,
+    extract,
+    selected_format,
+)
 
 SOURCE_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
@@ -96,6 +102,76 @@ class TestBuildItem:
 
         assert item.kind is expected_kind
         assert item.ext == ext.lower()
+
+    def test_protocol_is_carried_through(self):
+        entry = {
+            "ext": "mp4",
+            "url": "https://example.com/f",
+            "protocol": "m3u8_native",
+        }
+
+        assert build_item(entry).protocol == "m3u8_native"
+
+    def test_protocol_is_lowercased(self):
+        entry = {"ext": "mp4", "url": "https://example.com/f", "protocol": "HTTPS"}
+
+        assert build_item(entry).protocol == "https"
+
+    def test_a_missing_protocol_is_empty(self):
+        assert build_item({"ext": "mp4", "url": "https://example.com/f"}).protocol == ""
+
+    def test_protocol_comes_from_the_same_place_as_the_url(self):
+        """A selected HLS format under an entry that calls itself plain https.
+
+        Reading the address from one dictionary and the protocol from another is
+        exactly how a segmented stream would pass the size gate as a plain file.
+        """
+        entry = {
+            "ext": "mp4",
+            "protocol": "https",
+            "requested_downloads": [
+                {"url": "https://example.com/master.m3u8", "protocol": "m3u8_native"}
+            ],
+        }
+
+        item = build_item(entry)
+
+        assert item.url == "https://example.com/master.m3u8"
+        assert item.protocol == "m3u8_native"
+
+    def test_falls_back_to_the_entry_protocol(self):
+        entry = {
+            "ext": "mp4",
+            "protocol": "http_dash_segments",
+            "requested_downloads": [{"url": "https://example.com/manifest"}],
+        }
+
+        assert build_item(entry).protocol == "http_dash_segments"
+
+
+class TestSelectedFormat:
+    def test_prefers_requested_downloads_over_url_and_formats(self):
+        entry = {
+            "requested_downloads": [{"url": "https://example.com/best.mp4", "id": "rd"}],
+            "url": "https://example.com/fallback.mp4",
+            "formats": [{"url": "https://example.com/worst.mp4", "id": "fmt"}],
+        }
+
+        assert selected_format(entry)["id"] == "rd"
+
+    def test_takes_the_last_format_as_the_best(self):
+        entry = {
+            "formats": [
+                {"url": "https://example.com/worst.mp4", "id": "worst"},
+                {"url": "https://example.com/best.mp4", "id": "best"},
+            ],
+        }
+
+        assert selected_format(entry)["id"] == "best"
+
+    def test_returns_an_empty_mapping_when_nothing_has_a_url(self):
+        assert selected_format({}) == {}
+
 
 class TestDirectUrl:
 

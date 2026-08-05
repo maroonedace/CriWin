@@ -7,11 +7,13 @@ from dotenv import load_dotenv
 from bot.constants import (
     ENVIRONMENTS,
     INVALID_ENVIRONMENT,
+    INVALID_MAX_POST_MB,
     MISSING_DEV_GUILD_ID,
     MISSING_TOKEN,
     NON_NUMERIC_DEV_GUILD_ID,
     CONFIG_VALIDATED,
 )
+from bot.parsing import positive_int
 
 load_dotenv()
 
@@ -21,6 +23,9 @@ class Config:
     ENVIRONMENT = os.getenv("ENVIRONMENT", "").lower()
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     DEV_GUILD_ID = os.getenv("DEV_GUILD_ID")
+    # None when the value is unusable, so validate_config can report it the same
+    # way as every other setting instead of raising at import time.
+    MAX_POST_MB = positive_int(os.getenv("MAX_POST_MB", "50"))
 
 def validate_config() -> str:
     """Validate required configuration, exiting the process if it is missing.
@@ -34,6 +39,10 @@ def validate_config() -> str:
 
     if Config.ENVIRONMENT not in ENVIRONMENTS:
         logger.critical(INVALID_ENVIRONMENT, ENVIRONMENTS, Config.ENVIRONMENT)
+        sys.exit(1)
+
+    if Config.MAX_POST_MB is None:
+        logger.critical(INVALID_MAX_POST_MB, os.getenv("MAX_POST_MB"))
         sys.exit(1)
 
     if Config.ENVIRONMENT == "development":

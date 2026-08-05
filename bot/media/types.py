@@ -13,6 +13,7 @@ class MediaItem:
     url: str
     kind: MediaKind
     ext: str
+    protocol: str = ""
     filesize: int | None = None
     filesize_approx: int | None = None
 
