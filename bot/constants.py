@@ -10,6 +10,9 @@ CONFIG_VALIDATED = "Configuration validated: environment=%s"
 EXTRACTION_REQUESTED = "Extraction requested by %s for %s"
 EXTRACTION_ERROR = "Extraction failed for %s"
 
+COOKIES_LOADED = "Authenticating %s extraction with %s"
+COOKIE_UNREADABLE = "Cookie file exists but cannot be read: %s"
+
 SIZE_PROBE_FAILED = "Size probe (%s) failed for %s"
 POST_SIZE_RESOLVED = "Post size resolved for %s: total=%s bytes, verdict=%s"
 SIZING_ERROR = "Size resolution failed for %s"

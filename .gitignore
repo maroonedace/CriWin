@@ -11,3 +11,6 @@ __pycache__/
 
 # Test Coverage
 .pytest_cache/
+
+# Cookie files
+cookies/

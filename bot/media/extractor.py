@@ -3,12 +3,21 @@ import logging
 
 from yt_dlp import YoutubeDL
 
+from bot.constants import COOKIES_LOADED
+from bot.media.cookies import cookie_file
 from bot.media.platforms import Platform, resolve_platform
 from bot.media.types import MediaItem, MediaKind, MediaPost
 
 logger = logging.getLogger(__name__)
 
 IMAGE_EXTENSIONS = frozenset({"gif", "heic", "jpeg", "jpg", "png", "webp"})
+
+class ReadOnlyCookieYoutubeDL(YoutubeDL):
+    """yt-dlp with cookie write-back disabled."""
+
+    def save_cookies(self):
+        return
+
 
 YTDLP_OPTIONS = {
     "quiet": True,
@@ -27,20 +36,32 @@ async def extract(url: str) -> MediaPost | None:
     if platform is None:
         return None
 
-    info = await asyncio.to_thread(fetch_info, url)
+    info = await asyncio.to_thread(fetch_info, url, platform)
 
     return build_post(url, platform, info)
 
 
-def fetch_info(url: str) -> dict:
+def fetch_info(url: str, platform: Platform) -> dict:
     """Ask yt-dlp what is behind a URL.
 
     Blocking, so it is only ever reached through a worker thread.
     """
-    with YoutubeDL(YTDLP_OPTIONS) as ydl:
+    with ReadOnlyCookieYoutubeDL(ytdlp_options(platform)) as ydl:
         info = ydl.extract_info(url, download=False)
 
         return ydl.sanitize_info(info)
+
+
+def ytdlp_options(platform: Platform) -> dict:
+    """The yt-dlp options for one extraction."""
+    options = dict(YTDLP_OPTIONS)
+    cookies = cookie_file(platform)
+
+    if cookies is not None:
+        options["cookiefile"] = cookies
+        logger.info(COOKIES_LOADED, platform, cookies)
+
+    return options
 
 
 def build_post(source_url: str, platform: Platform, info: dict) -> MediaPost:

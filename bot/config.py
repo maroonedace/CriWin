@@ -23,9 +23,9 @@ class Config:
     ENVIRONMENT = os.getenv("ENVIRONMENT", "").lower()
     DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
     DEV_GUILD_ID = os.getenv("DEV_GUILD_ID")
-    # None when the value is unusable, so validate_config can report it the same
-    # way as every other setting instead of raising at import time.
+
     MAX_POST_MB = positive_int(os.getenv("MAX_POST_MB", "50"))
+    COOKIE_DIR = os.getenv("COOKIE_DIR", "/mnt/criwin/cookies")
 
 def validate_config() -> str:
     """Validate required configuration, exiting the process if it is missing.
