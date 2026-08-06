@@ -3,4 +3,6 @@ services:
     build: .
     env_file:
       - ${ENV_FILE}
+    volumes:
+      - ${COOKIE_DIR}:${COOKIE_DIR}:ro
     restart: unless-stopped

@@ -11,6 +11,7 @@ def valid_config(monkeypatch):
     monkeypatch.setattr(Config, "DISCORD_TOKEN", "token")
     monkeypatch.setattr(Config, "DEV_GUILD_ID", "123456789")
     monkeypatch.setattr(Config, "MAX_POST_MB", 50)
+    monkeypatch.setattr(Config, "COOKIE_DIR", "/nonexistent/criwin/cookies")
 
 
 @pytest.fixture
